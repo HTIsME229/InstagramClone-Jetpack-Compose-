@@ -1,14 +1,17 @@
 package com.example.instagramclone.auth
 
+import android.annotation.SuppressLint
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
-import com.example.instagramclone.AuthenticationViewModel
+import com.example.instagramclone.ui.viewModel.AuthenticationViewModel
 import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.Text
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -27,24 +30,30 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.instagramclone.R
+import com.example.instagramclone.data.model.User
+
 @Composable
 fun SignUpScreen(
     navController: NavController,
     vm: AuthenticationViewModel
 ) {
+    val scrollState = rememberScrollState()
+
     var email by remember { mutableStateOf("") }
     var fullName by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-
+Box(modifier = Modifier.fillMaxSize()
+    .padding(top = 20.dp)
+    .padding(horizontal = 20.dp)) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = 20.dp)
-            .padding(horizontal = 20.dp),
+            .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
+
     ) {
         // Back button
         Row(
@@ -62,7 +71,7 @@ fun SignUpScreen(
                     .size(24.dp)
                     .clickable { navController.popBackStack() }
             )
-            Spacer(modifier = Modifier.weight(1f))
+
         }
 
         // Instagram logo
@@ -235,9 +244,9 @@ fun SignUpScreen(
                     onSuccess = {
                         isLoading = false
                         // Navigate to main screen after successful signup
-                        navController.navigate("main_feed") {
+                        navController.navigate("sign_in") {
                             // Clear the back stack so user can't go back to signup
-                            popUpTo("login_screen") { inclusive = true }
+                            popUpTo("sign_in") { inclusive = true }
                         }
                     },
                     onError = { error ->
@@ -279,7 +288,7 @@ fun SignUpScreen(
             )
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+
 
         // Login option
         Row(
@@ -302,8 +311,10 @@ fun SignUpScreen(
         }
     }
 }
+    }
 
 // Function to handle signup submission
+@SuppressLint("SuspiciousIndentation")
 fun submitSignUp(
     email: String,
     fullName: String,
@@ -333,22 +344,29 @@ fun submitSignUp(
     onStart()
 
     // Log for debugging
-    Log.d("signupcheck", "Email: $email")
-    Log.d("signupcheck", "Full Name: $fullName")
-    Log.d("signupcheck", "Username: $username")
-    Log.d("signupcheck", "Password: $password")
 
-    // Call the ViewModel's signup method
-//    vm.signUp(
-//        email = email,
-//        fullName = fullName,
-//        username = username,
-//        password = password,
-//        onSuccess = {
-//            onSuccess()
-//        },
-//        onFail = { errorMessage ->
-//            onError(errorMessage ?: "Sign up failed")
-//        }
-//    )
+
+ val user = User(
+        email = email,
+        name = fullName,
+        userName = username,
+        password = password,
+        imageUrl = "",
+        bio = "",
+        followers = emptyList(),
+        following = emptyList(),
+
+    )
+    vm.register(
+        user = user,
+        onResult = { success, error ->
+            if (success) {
+                onSuccess()
+            } else {
+                onError(error ?: "An unknown error occurred")
+            }
+        }
+    )
+
+
 }

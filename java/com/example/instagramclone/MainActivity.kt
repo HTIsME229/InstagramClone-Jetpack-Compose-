@@ -1,27 +1,21 @@
 package com.example.instagramclone
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.instagramclone.auth.LoginScreen
 import com.example.instagramclone.auth.SignUpScreen
 import com.example.instagramclone.ui.theme.InstagramCloneTheme
+import com.example.instagramclone.ui.viewModel.AuthenticationViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import dagger.hilt.android.lifecycle.HiltViewModel
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -52,7 +46,15 @@ val navController = rememberNavController()
         composable(DestinationScreen.SignUp.route){
             SignUpScreen(navController = navController, vm =vm)
         }
+        composable(DestinationScreen.Home.route){
+       Home()
+        }
     }
+
+}
+@Composable
+fun Home() {
+    Text(text = "Home")
 }
 
 @Preview(showBackground = true)

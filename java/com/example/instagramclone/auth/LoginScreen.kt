@@ -5,7 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
-import com.example.instagramclone.AuthenticationViewModel
+import com.example.instagramclone.ui.viewModel.AuthenticationViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -30,11 +30,12 @@ import com.example.instagramclone.R
 @Composable
 fun LoginScreen(
 navController: NavController,
-vm:AuthenticationViewModel
+vm: AuthenticationViewModel
 ) {
  var username by remember { mutableStateOf("") }
  var password by remember { mutableStateOf("") }
-
+var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
  Column(
   modifier = Modifier
    .fillMaxSize()
@@ -124,18 +125,44 @@ vm:AuthenticationViewModel
 
   // Login button
   Button(
-   onClick = { submitLogin(username,password,vm) },
+   onClick = {
+    submitLogin(username,password,vm,
+     onStart = { isLoading = true; errorMessage = null },
+     onSuccess = {
+      isLoading = false
+      // Navigate to main screen after successful signup
+      navController.navigate("home") {
+       // Clear the back stack so user can't go back to signup
+       popUpTo("home") { inclusive = true }
+      }
+     },
+     onFailure = { error->
+      isLoading = false
+      errorMessage = error
+     }
+     )
+
+             },
    modifier = Modifier
     .fillMaxWidth()
     .height(50.dp),
    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3897F0)),
-   shape = RoundedCornerShape(5.dp)
+   shape = RoundedCornerShape(5.dp),
+   enabled = !isLoading && username.isNotEmpty() && password.isNotEmpty()
   ) {
-   Text(
-    text = "Log in",
-    color = Color.White,
-    fontSize = 16.sp
-   )
+   if (isLoading) {
+    androidx.compose.material3.CircularProgressIndicator(
+     color = Color.White,
+     modifier = Modifier.size(24.dp),
+     strokeWidth = 2.dp
+    )
+   } else {
+    Text(
+     text = "Login",
+     color = Color.White,
+     fontSize = 16.sp
+    )
+   }
   }
 
   Spacer(modifier = Modifier.height(16.dp))
@@ -162,6 +189,14 @@ vm:AuthenticationViewModel
   }
 
   Spacer(modifier = Modifier.height(20.dp))
+  errorMessage?.let {
+   Spacer(modifier = Modifier.height(8.dp))
+   Text(
+    text = it,
+    color = Color.Red,
+    fontSize = 14.sp
+   )
+  }
 
   // OR divider
   Row(
@@ -228,8 +263,20 @@ vm:AuthenticationViewModel
 
 }
 fun submitLogin(   username: String,
-                   password: String,vm: AuthenticationViewModel) {
-    vm.login(username, password)
+                   password: String,vm: AuthenticationViewModel,
+                   onStart:() -> Unit ,
+                     onSuccess:() -> Unit,
+                        onFailure:(String) -> Unit
+) {
+ onStart()
+ Log.d("TAG", "submitLogin: $username $password")
+    vm.login(username, password,) { success, message ->
+        if (success) {
+onSuccess()
+        } else {
+onFailure(message?:"Password or username is incorrect")
+        }
+    }
 }
 
 
