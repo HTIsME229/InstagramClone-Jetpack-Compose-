@@ -40,6 +40,7 @@ class AuthenticationRepository {
                                     "email" to user.email,
                                     "userName" to user.userName,
                                     "imageUrl" to user.imageUrl,
+                                    "password" to user.password,
                                     "bio" to user.bio,
                                     "followers" to user.followers,
                                     "following" to user.following,
