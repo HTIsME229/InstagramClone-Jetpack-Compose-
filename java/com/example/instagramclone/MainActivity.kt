@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -44,19 +45,23 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.instagramclone.auth.LoginScreen
-import com.example.instagramclone.auth.SignUpScreen
+import com.example.instagramclone.ui.auth.LoginScreen
+import com.example.instagramclone.ui.auth.SignUpScreen
 import com.example.instagramclone.ui.Bar.BottomNavItem
 import com.example.instagramclone.ui.Bar.MyBottomNavigation
 import com.example.instagramclone.ui.Bar.MyTopAppBar
+import com.example.instagramclone.ui.Home.Home
+import com.example.instagramclone.ui.profile.ProfileEditScreen
 import com.example.instagramclone.ui.profile.ProfileScreen
 import com.example.instagramclone.ui.profile.TopBar
 import com.example.instagramclone.ui.theme.InstagramCloneTheme
 import com.example.instagramclone.ui.viewModel.AuthenticationViewModel
+import com.example.instagramclone.ui.viewModel.ProfileViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -76,11 +81,13 @@ sealed class DestinationScreen(val route: String) {
     object Search : DestinationScreen("search")
     object Add : DestinationScreen("add")
     object Likes : DestinationScreen("likes")
+    object editProfile : DestinationScreen("edit_profile")
 
 }
 @Composable
 fun InstagramApp(){
 val vm= hiltViewModel<AuthenticationViewModel>()
+    val profileViewModel = hiltViewModel<ProfileViewModel>()
 val navController = rememberNavController()
     NavHost(navController = navController, startDestination =DestinationScreen.SignIn.route ) {
      composable(DestinationScreen.SignIn.route){
@@ -90,22 +97,34 @@ val navController = rememberNavController()
             SignUpScreen(navController = navController, vm =vm)
         }
         composable(DestinationScreen.Home.route){
-       InstagramMainScreen(navController = navController)
+       InstagramMainScreen(navController = navController,vm)
 
         }
         composable(DestinationScreen.Profile.route){
-            ProfileScreen()
+            ProfileScreen(vm,navController,vm._profile.value!!)
+        }
+        composable(DestinationScreen.editProfile.route){
+            ProfileEditScreen(vm,
+                onSave = {
+                    profileViewModel.updateProfile(it,
+                        onSuccess = { success, user ->
+                            vm.setProfile(user)
+                            navController.popBackStack()
+                        },
+                        onError = {
+                            // Handle error
+                        })
+            },
+              onCancel = {
+                  navController.popBackStack()
+              }  )
         }
 
 
     }
 
 }
-@Composable
-fun Home() {
-   MyTopAppBar()
-    Text(text = "Home")
-}
+
 
 @Preview(showBackground = true)
 @Composable
@@ -114,9 +133,8 @@ fun GreetingPreview() {
 InstagramApp()
     }
 }
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InstagramMainScreen(navController: NavController) {
+fun InstagramMainScreen(navController: NavController,vm:AuthenticationViewModel) {
     val tabs = remember {
         listOf(
             BottomNavItem(
@@ -152,10 +170,9 @@ fun InstagramMainScreen(navController: NavController) {
         )
     }
 
-    var selectedTabIndex by remember { mutableStateOf(0) }
+    var selectedTabIndex by rememberSaveable  { mutableStateOf(0) }
 
     Scaffold(
-
         bottomBar = {
 MyBottomNavigation(items = tabs, selectedItemIndex = selectedTabIndex) {
 selectedTabIndex=it
@@ -172,7 +189,7 @@ selectedTabIndex=it
         ) {
 when (selectedTabIndex) {
     0 -> Home()
-    4 -> ProfileScreen()
+    4 -> ProfileScreen(vm ,navController,vm._profile.value!!)
     else -> Home()
 }
 

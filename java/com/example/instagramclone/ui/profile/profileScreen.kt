@@ -1,5 +1,6 @@
 package com.example.instagramclone.ui.profile
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
@@ -28,20 +29,27 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.instagramclone.R
+import com.example.instagramclone.data.model.User
+import com.example.instagramclone.ui.viewModel.AuthenticationViewModel
+import com.example.instagramclone.ui.viewModel.ProfileViewModel
+import dagger.hilt.android.AndroidEntryPoint
+
 
 @Composable
-fun ProfileScreen() {
+
+fun ProfileScreen( vm: AuthenticationViewModel, navController: NavController,user:User) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
         // Top bar
-        TopBar()
+        TopBar(user)
 
         // Profile info section
-        ProfileInfo()
+        ProfileInfo(user,navController)
 
         // Highlights section
         HighlightsSection()
@@ -55,7 +63,7 @@ fun ProfileScreen() {
 }
 
 @Composable
-fun TopBar() {
+fun TopBar(user: User) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -71,7 +79,7 @@ fun TopBar() {
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = "jacob_w",
+                text = user.userName,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )
@@ -91,7 +99,7 @@ fun TopBar() {
 }
 
 @Composable
-fun ProfileInfo() {
+fun ProfileInfo(user: User,navController: NavController) {
     Column(modifier = Modifier.padding(16.dp)) {
         // Profile picture and stats
         Row(
@@ -125,7 +133,7 @@ fun ProfileInfo() {
         // Name and bio
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text = "Jacob West",
+            text = user.name,
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp
         )
@@ -143,7 +151,11 @@ fun ProfileInfo() {
         // Edit profile button
         Spacer(modifier = Modifier.height(12.dp))
         Button(
-            onClick = { /* Edit profile action */ },
+            onClick = {
+                      navController.navigate("edit_profile")
+
+
+            },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent,

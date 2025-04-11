@@ -1,6 +1,10 @@
 package com.example.instagramclone
 
+import com.example.instagramclone.source.DefaultRepository
+import com.example.instagramclone.source.DefaultRepositoryImpl
+import com.example.instagramclone.source.local.LocalDefaultRepositoryImp
 import com.example.instagramclone.source.remote.AuthenticationRepository
+import com.example.instagramclone.source.remote.RemoteDefaultRepositoryImp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -11,7 +15,6 @@ import com.google.firebase.storage.ktx.storage
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ViewModelComponent
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -32,5 +35,16 @@ class HiltModule {
     fun provideAuthenticationRepository(
     ): AuthenticationRepository {
         return  AuthenticationRepository()
+    }
+    @Provides
+    @Singleton
+    fun provideRemoteRepository(
+
+    ): DefaultRepositoryImpl {
+        return DefaultRepositoryImpl(
+            remoteRepository = RemoteDefaultRepositoryImp(
+            ),
+            localRepository = LocalDefaultRepositoryImp()
+        )
     }
 }

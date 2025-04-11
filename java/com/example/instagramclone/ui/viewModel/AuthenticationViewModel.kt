@@ -19,6 +19,9 @@ private  val  authenticationRepository: AuthenticationRepository
 )  :ViewModel() {
     private var profile : MutableLiveData<User?> = MutableLiveData()
     val _profile: MutableLiveData<User?> get() = profile
+    fun setProfile(user: User) {
+        profile.postValue(user)
+    }
 fun login(email:String,password:String,onResult: (Boolean, String?) -> Unit) {
     viewModelScope.launch {
         authenticationRepository.loginUser(email, password,) { success, message, user ->

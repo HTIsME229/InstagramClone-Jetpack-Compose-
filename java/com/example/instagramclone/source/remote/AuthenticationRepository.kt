@@ -78,6 +78,16 @@ class AuthenticationRepository {
             .addOnCompleteListener { authTask ->
                 if (authTask.isSuccessful) {
                     val uid = auth.currentUser?.uid
+                    var tokenId = ""
+                auth.currentUser?.getIdToken(false).let {
+                        it?.addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                 tokenId = task.result?.token?:""
+                            } else {
+                                Log.e("TAG", "Error getting token: ${task.exception?.message}")
+                            }
+                        }
+                    }
                     if (uid == null) {
                         onResult(false, "Không lấy được UID", null)
                         return@addOnCompleteListener
@@ -98,6 +108,7 @@ class AuthenticationRepository {
                             // 🔄 Cập nhật token trước khi trả về
 
                                     val user = User(
+                                        tokenId = tokenId,
                                         userId = document.getString("uid") ?: "",
                                         email = document.getString("email") ?: "",
                                         userName = document.getString("userName") ?: "",

@@ -1,4 +1,4 @@
-package com.example.instagramclone.auth
+package com.example.instagramclone.ui.auth
 
 import android.util.Log
 import androidx.compose.foundation.clickable
