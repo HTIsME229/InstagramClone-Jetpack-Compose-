@@ -29,6 +29,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import com.example.instagramclone.R
 import com.example.instagramclone.data.model.User
@@ -39,17 +40,23 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @Composable
 
-fun ProfileScreen( vm: AuthenticationViewModel, navController: NavController,user:User) {
+fun ProfileScreen( vm: AuthenticationViewModel, navController: NavController) {
+        var user  = vm._profile.value
+    vm._profile.observe(
+        LocalLifecycleOwner.current
+    ) { it ->
+      user= it
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
         // Top bar
-        TopBar(user)
+        TopBar(user!!)
 
         // Profile info section
-        ProfileInfo(user,navController)
+        ProfileInfo(user!!,navController)
 
         // Highlights section
         HighlightsSection()
@@ -139,14 +146,10 @@ fun ProfileInfo(user: User,navController: NavController) {
         )
 
         Text(
-            text = "Digital goodies designer @pixsellz",
+            text = user.bio,
             fontSize = 14.sp
         )
 
-        Text(
-            text = "Everything is designed.",
-            fontSize = 14.sp
-        )
 
         // Edit profile button
         Spacer(modifier = Modifier.height(12.dp))

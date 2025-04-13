@@ -1,6 +1,9 @@
 package com.example.instagramclone
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -51,13 +54,20 @@ import com.example.instagramclone.ui.Bar.BottomNavItem
 import com.example.instagramclone.ui.Bar.MyBottomNavigation
 import com.example.instagramclone.ui.Bar.MyTopAppBar
 import com.example.instagramclone.ui.Home.Home
+import com.example.instagramclone.ui.post.InstagramStylePicker
+import com.example.instagramclone.ui.post.NewPostScreen
 import com.example.instagramclone.ui.profile.ProfileEditScreen
 import com.example.instagramclone.ui.profile.ProfileScreen
 import com.example.instagramclone.ui.profile.TopBar
 import com.example.instagramclone.ui.theme.InstagramCloneTheme
 import com.example.instagramclone.ui.viewModel.AuthenticationViewModel
 import com.example.instagramclone.ui.viewModel.ProfileViewModel
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.auth.User
 import dagger.hilt.android.AndroidEntryPoint
+import java.net.URLDecoder
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -82,6 +92,7 @@ sealed class DestinationScreen(val route: String) {
     object Add : DestinationScreen("add")
     object Likes : DestinationScreen("likes")
     object editProfile : DestinationScreen("edit_profile")
+    object newPost : DestinationScreen("new_post/{encodedUri}")
 
 }
 @Composable
@@ -89,7 +100,12 @@ fun InstagramApp(){
 val vm= hiltViewModel<AuthenticationViewModel>()
     val profileViewModel = hiltViewModel<ProfileViewModel>()
 val navController = rememberNavController()
-    NavHost(navController = navController, startDestination =DestinationScreen.SignIn.route ) {
+    val startDestination = if (checkLogin(vm)) {
+        DestinationScreen.Home.route
+    } else {
+        DestinationScreen.SignIn.route
+    }
+    NavHost(navController = navController, startDestination =startDestination ) {
      composable(DestinationScreen.SignIn.route){
          LoginScreen(navController = navController, vm =vm )
      }
@@ -101,7 +117,7 @@ val navController = rememberNavController()
 
         }
         composable(DestinationScreen.Profile.route){
-            ProfileScreen(vm,navController,vm._profile.value!!)
+            ProfileScreen(vm,navController)
         }
         composable(DestinationScreen.editProfile.route){
             ProfileEditScreen(vm,
@@ -119,12 +135,48 @@ val navController = rememberNavController()
                   navController.popBackStack()
               }  )
         }
+        composable(DestinationScreen.Add.route){
+            InstagramStylePicker {
+                val encodedUri = URLEncoder.encode(it.toString(), StandardCharsets.UTF_8.toString())
+                navController.navigate("new_post/$encodedUri")            }
+        }
+        composable(DestinationScreen.newPost.route){backStackEntry ->
+            val encodedUri = backStackEntry.arguments?.getString("encodedUri") ?: ""
+            val decodedUri = URLDecoder.decode(encodedUri, StandardCharsets.UTF_8.toString())
+            val uri = Uri.parse(decodedUri)
+            if (uri != null) {
+                NewPostScreen(uri = uri.toString())
+            }
+        }
+
 
 
     }
 
 }
 
+fun checkLogin(vm: AuthenticationViewModel):Boolean {
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    if(vm._profile.value == null)
+        if(currentUser == null){
+            return false
+        }
+        else{
+        val task = currentUser.getIdToken(false)
+            if(task.isSuccessful){
+                val token = task.result?.token
+                if(token != null){
+                    vm.refreshUser(currentUser.uid,token)
+                }
+            }
+            else
+            {
+                return  false
+            }
+
+        }
+    return  true
+}
 
 @Preview(showBackground = true)
 @Composable
@@ -187,9 +239,15 @@ selectedTabIndex=it
                 .padding(top = 20.dp)
                 .padding(paddingValues)
         ) {
-when (selectedTabIndex) {
+            if (selectedTabIndex == 2) {
+                // Điều hướng đến Add nhưng không thay đổi selectedTabIndex
+                selectedTabIndex = 0  // Hoặc bạn có thể lưu tab trước đó
+                navController.navigate(DestinationScreen.Add.route)
+            }
+
+            when (selectedTabIndex) {
     0 -> Home()
-    4 -> ProfileScreen(vm ,navController,vm._profile.value!!)
+    4 -> ProfileScreen(vm ,navController)
     else -> Home()
 }
 

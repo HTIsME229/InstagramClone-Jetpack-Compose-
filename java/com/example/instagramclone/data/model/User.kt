@@ -16,13 +16,5 @@ data class User(
 
 )
 {
-    constructor(
-        tokenId: String,
-        currentUser: User?,
-        email: String,
-        username: String,
-        name: String,
-        imageUrl: String,
-        phone: String
-    ) : this()
+
 }

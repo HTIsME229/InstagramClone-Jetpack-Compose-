@@ -70,7 +70,7 @@ fun ProfileEditScreen(vm:AuthenticationViewModel,
                 },
                 actions = {
                     TextButton(onClick = { onSave(User(currentUser?.tokenId?:"",currentUser?.userId?:""
-                        ,email,username,name,imageUrl,phone )
+                        ,email,username,name,imageUrl,phone,bio )
                         ) }) {
                         Text("Done", color = Color.Blue)
                     }

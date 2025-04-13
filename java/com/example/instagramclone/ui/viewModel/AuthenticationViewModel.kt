@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.instagramclone.data.model.User
+import com.example.instagramclone.source.DefaultRepositoryImpl
 import com.example.instagramclone.source.remote.AuthenticationRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -15,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthenticationViewModel @Inject constructor(
-private  val  authenticationRepository: AuthenticationRepository
+private  val  authenticationRepository: AuthenticationRepository,
+    private val defaultRepositoryImpl: DefaultRepositoryImpl
 )  :ViewModel() {
     private var profile : MutableLiveData<User?> = MutableLiveData()
     val _profile: MutableLiveData<User?> get() = profile
@@ -51,6 +53,19 @@ fun login(email:String,password:String,onResult: (Boolean, String?) -> Unit) {
                     onResult(false, message)
                 } else {
                     onResult(false, "server error")
+                }
+            }
+        }
+    }
+    fun refreshUser(userId:String,idToken:String) {
+        viewModelScope.launch {
+           val result= defaultRepositoryImpl.findUserByUid(userId,idToken)
+            result.collect { user ->
+                if (user != null) {
+                    profile.postValue(user)
+                } else {
+                    profile.postValue(null
+                    )
                 }
             }
         }

@@ -26,4 +26,5 @@ class ProfileViewModel @Inject constructor(private val repository: DefaultReposi
         }
 
     }
+
 }
