@@ -1,9 +1,12 @@
 package com.example.instagramclone
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Message
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -32,22 +35,27 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.instagramclone.data.model.Post
 import com.example.instagramclone.ui.auth.LoginScreen
 import com.example.instagramclone.ui.auth.SignUpScreen
 import com.example.instagramclone.ui.Bar.BottomNavItem
@@ -61,10 +69,13 @@ import com.example.instagramclone.ui.profile.ProfileScreen
 import com.example.instagramclone.ui.profile.TopBar
 import com.example.instagramclone.ui.theme.InstagramCloneTheme
 import com.example.instagramclone.ui.viewModel.AuthenticationViewModel
+import com.example.instagramclone.ui.viewModel.PostViewModel
 import com.example.instagramclone.ui.viewModel.ProfileViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.auth.User
 import dagger.hilt.android.AndroidEntryPoint
+import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -83,6 +94,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
 sealed class DestinationScreen(val route: String) {
     object SignUp : DestinationScreen("sign_up")
     object SignIn : DestinationScreen("sign_in")
@@ -95,31 +107,34 @@ sealed class DestinationScreen(val route: String) {
     object newPost : DestinationScreen("new_post/{encodedUri}")
 
 }
+
 @Composable
-fun InstagramApp(){
-val vm= hiltViewModel<AuthenticationViewModel>()
+fun InstagramApp() {
+    val vm = hiltViewModel<AuthenticationViewModel>()
     val profileViewModel = hiltViewModel<ProfileViewModel>()
-val navController = rememberNavController()
+    val postViewModel = hiltViewModel<PostViewModel>()
+    val context = LocalContext.current
+    val navController = rememberNavController()
     val startDestination = if (checkLogin(vm)) {
         DestinationScreen.Home.route
     } else {
         DestinationScreen.SignIn.route
     }
-    NavHost(navController = navController, startDestination =startDestination ) {
-     composable(DestinationScreen.SignIn.route){
-         LoginScreen(navController = navController, vm =vm )
-     }
-        composable(DestinationScreen.SignUp.route){
-            SignUpScreen(navController = navController, vm =vm)
+    NavHost(navController = navController, startDestination = startDestination) {
+        composable(DestinationScreen.SignIn.route) {
+            LoginScreen(navController = navController, vm = vm)
         }
-        composable(DestinationScreen.Home.route){
-       InstagramMainScreen(navController = navController,vm)
+        composable(DestinationScreen.SignUp.route) {
+            SignUpScreen(navController = navController, vm = vm)
+        }
+        composable(DestinationScreen.Home.route) {
+            InstagramMainScreen(navController = navController, vm)
 
         }
-        composable(DestinationScreen.Profile.route){
-            ProfileScreen(vm,navController)
+        composable(DestinationScreen.Profile.route) {
+            ProfileScreen(vm, navController)
         }
-        composable(DestinationScreen.editProfile.route){
+        composable(DestinationScreen.editProfile.route) {
             ProfileEditScreen(vm,
                 onSave = {
                     profileViewModel.updateProfile(it,
@@ -130,63 +145,98 @@ val navController = rememberNavController()
                         onError = {
                             // Handle error
                         })
-            },
-              onCancel = {
-                  navController.popBackStack()
-              }  )
+                },
+                onCancel = {
+                    navController.popBackStack()
+                })
         }
-        composable(DestinationScreen.Add.route){
+        composable(DestinationScreen.Add.route) {
             InstagramStylePicker {
                 val encodedUri = URLEncoder.encode(it.toString(), StandardCharsets.UTF_8.toString())
-                navController.navigate("new_post/$encodedUri")            }
+                navController.navigate("new_post/$encodedUri")
+            }
         }
-        composable(DestinationScreen.newPost.route){backStackEntry ->
+        composable(DestinationScreen.newPost.route) { backStackEntry ->
             val encodedUri = backStackEntry.arguments?.getString("encodedUri") ?: ""
             val decodedUri = URLDecoder.decode(encodedUri, StandardCharsets.UTF_8.toString())
             val uri = Uri.parse(decodedUri)
             if (uri != null) {
-                NewPostScreen(uri = uri.toString())
+                NewPostScreen(
+                    uri = uri.toString(),
+                    onPostSelected = { postUri, caption, visibility ->
+                        vm.uploadFile(
+                            postUri.toUri(),
+                            onSuccess =  { it ->
+                                postViewModel.uploadPost(
+                                    post = Post(
+                                        userId = vm._profile.value?.userId.toString(),
+                                        mediaUrl = it,
+                                        caption = caption,
+                                        visibility = visibility,
+
+                                        ),
+                                    onSuccess = {
+                                        navController.navigate(DestinationScreen.Home.route) {
+                                            popUpTo(0) { inclusive = true }
+                                        }
+
+                                    },
+                                    onError = { exp ->
+                                        showToast(context, exp.toString())
+
+                                    }
+
+                                )
+
+                            },
+                            onError =
+                            {
+                                showToast(context, it.message.toString())
+                            }
+                        )
+                    }
+                )
             }
         }
-
 
 
     }
-
 }
 
-fun checkLogin(vm: AuthenticationViewModel):Boolean {
+fun showToast(context: Context, message: String) {
+    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+}
+
+fun checkLogin(vm: AuthenticationViewModel): Boolean {
     val currentUser = FirebaseAuth.getInstance().currentUser
-    if(vm._profile.value == null)
-        if(currentUser == null){
+    if (vm._profile.value == null)
+        if (currentUser == null) {
             return false
-        }
-        else{
-        val task = currentUser.getIdToken(false)
-            if(task.isSuccessful){
+        } else {
+            val task = currentUser.getIdToken(false)
+            if (task.isSuccessful) {
                 val token = task.result?.token
-                if(token != null){
-                    vm.refreshUser(currentUser.uid,token)
+                if (token != null) {
+                    vm.refreshUser(currentUser.uid, token)
                 }
-            }
-            else
-            {
-                return  false
+            } else {
+                return false
             }
 
         }
-    return  true
+    return true
 }
 
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     InstagramCloneTheme {
-InstagramApp()
+        InstagramApp()
     }
 }
+
 @Composable
-fun InstagramMainScreen(navController: NavController,vm:AuthenticationViewModel) {
+fun InstagramMainScreen(navController: NavController, vm: AuthenticationViewModel) {
     val tabs = remember {
         listOf(
             BottomNavItem(
@@ -222,16 +272,16 @@ fun InstagramMainScreen(navController: NavController,vm:AuthenticationViewModel)
         )
     }
 
-    var selectedTabIndex by rememberSaveable  { mutableStateOf(0) }
+    var selectedTabIndex by rememberSaveable { mutableStateOf(0) }
 
     Scaffold(
         bottomBar = {
-MyBottomNavigation(items = tabs, selectedItemIndex = selectedTabIndex) {
-selectedTabIndex=it
+            MyBottomNavigation(items = tabs, selectedItemIndex = selectedTabIndex) {
+                selectedTabIndex = it
 
-}
+            }
         }
-    ) {paddingValues ->
+    ) { paddingValues ->
         // Nội dung chính của màn hình
         Box(
             modifier = Modifier
@@ -246,10 +296,10 @@ selectedTabIndex=it
             }
 
             when (selectedTabIndex) {
-    0 -> Home()
-    4 -> ProfileScreen(vm ,navController)
-    else -> Home()
-}
+                0 -> Home()
+                4 -> ProfileScreen(vm, navController)
+                else -> Home()
+            }
 
         }
     }

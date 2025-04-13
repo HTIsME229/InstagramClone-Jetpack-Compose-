@@ -1,16 +1,22 @@
 package com.example.instagramclone.source.remote
 
 import android.annotation.SuppressLint
+import android.net.Uri
 import android.util.Log
+import android.widget.Toast
+import androidx.compose.runtime.Composable
 import com.example.instagramclone.data.model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
+import java.util.UUID
 
 
 class AuthenticationRepository {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val storage = FirebaseStorage.getInstance()
     fun registerUser(
         user: User,
         onResult: (Boolean, String?) -> Unit
@@ -129,5 +135,23 @@ class AuthenticationRepository {
                 }
             }
     }
+    fun uploadFile(
+        fileUri: Uri,
+        onSuccess: (String) -> Unit,
+        onError:  (Exception) -> Unit = {}
+    ) {
+        val storageRef = storage.reference
+        val fileName = "images/${UUID.randomUUID()}.jpg"
+        val fileRef = storageRef.child(fileName)
 
+        fileRef.putFile(fileUri)
+            .addOnSuccessListener {
+                fileRef.downloadUrl.addOnSuccessListener { uri ->
+                    onSuccess(uri.toString()) // Gọi hàm khi upload thành công
+                }
+            }
+            .addOnFailureListener { exception ->
+                onError(exception) // Gọi hàm khi lỗi
+            }
+    }
 }

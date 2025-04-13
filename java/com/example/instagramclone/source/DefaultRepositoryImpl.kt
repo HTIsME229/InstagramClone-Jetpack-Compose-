@@ -1,5 +1,6 @@
 package com.example.instagramclone.source
 
+import com.example.instagramclone.data.model.Post
 import com.example.instagramclone.data.model.User
 import com.example.instagramclone.source.local.LocalDefaultRepositoryImp
 import com.example.instagramclone.source.remote.RemoteDefaultRepositoryImp
@@ -19,4 +20,7 @@ class DefaultRepositoryImpl @Inject constructor(
        return remoteRepository.findUserByUid(userId,tokenId)
     }
 
+    override suspend fun uploadPost(post: Post): ResponseResult {
+        return remoteRepository.uploadPost(post)
+    }
 }

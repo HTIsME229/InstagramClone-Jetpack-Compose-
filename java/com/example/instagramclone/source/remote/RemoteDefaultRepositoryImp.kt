@@ -1,5 +1,6 @@
 package com.example.instagramclone.source.remote
 
+import com.example.instagramclone.data.model.Post
 import com.example.instagramclone.data.model.User
 import com.example.instagramclone.source.DefaultRepository
 import com.example.instagramclone.source.ResponseResult
@@ -50,6 +51,21 @@ catch (e: Exception) {
             emit(null)
         }
         }
+
+    override suspend fun uploadPost(post: Post): ResponseResult {
+        val baseUrl = "https://createpost-ba53qvmrba-uc.a.run.app"
+        val retrofit = createRetrofitService(baseUrl).create(InstagramService::class.java)
+        try {
+            val response = retrofit.uploadPost(post)
+            if (response.isSuccessful) {
+                return ResponseResult(true, null)
+            } else {
+                return ResponseResult(false, response.errorBody()?.string())
+            }
+        } catch (e: Exception) {
+            return ResponseResult(false, e.message)
+        }
+    }
 
     private fun createRetrofitService(baseUrl: String): Retrofit {
         val logging = HttpLoggingInterceptor().apply {

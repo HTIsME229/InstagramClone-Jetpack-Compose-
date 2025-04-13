@@ -1,5 +1,6 @@
 package com.example.instagramclone.source.remote
 
+import com.example.instagramclone.data.model.Post
 import com.example.instagramclone.data.model.User
 import com.example.instagramclone.source.ResponseResult
 import kotlinx.coroutines.flow.Flow
@@ -12,4 +13,6 @@ interface InstagramService {
   suspend  fun updateProfile(@Body user: User): Response<ResponseResult>
   @POST("/")
     suspend fun findUserById(@Body request: Map<String,String>): Response<User?>
+    @POST("/")
+    suspend fun  uploadPost(@Body post: Post): Response<ResponseResult>
 }

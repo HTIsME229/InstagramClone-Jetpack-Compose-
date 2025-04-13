@@ -1,8 +1,11 @@
 package com.example.instagramclone.data.model
 
+import com.google.gson.annotations.SerializedName
+
 
 data class User(
     var tokenId: String = "",
+    @SerializedName("uid")
     var userId: String = "",
     var email: String = "",
     var  userName: String = "",

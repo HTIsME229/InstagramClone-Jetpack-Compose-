@@ -1,6 +1,8 @@
 package com.example.instagramclone.ui.viewModel
 
+import android.net.Uri
 import android.util.Log
+import androidx.compose.runtime.Composable
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -21,6 +23,7 @@ private  val  authenticationRepository: AuthenticationRepository,
 )  :ViewModel() {
     private var profile : MutableLiveData<User?> = MutableLiveData()
     val _profile: MutableLiveData<User?> get() = profile
+
     fun setProfile(user: User) {
         profile.postValue(user)
     }
@@ -69,5 +72,13 @@ fun login(email:String,password:String,onResult: (Boolean, String?) -> Unit) {
                 }
             }
         }
+    }
+    fun uploadFile(uri: Uri,onSuccess: (String) -> Unit, onError:  (Exception) -> Unit = {}) {
+        authenticationRepository.uploadFile(uri,
+                 {
+                     onSuccess(it)
+                 }, {
+                     onError(it)
+                 })
     }
 }

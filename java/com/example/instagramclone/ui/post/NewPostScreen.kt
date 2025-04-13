@@ -45,9 +45,12 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.instagramclone.data.model.Visibility
 
 @Composable
-fun NewPostScreen(uri: String) {
+fun NewPostScreen(uri: String,onPostSelected: (uri:String,caption:String,
+                                               selectedVisibility:Visibility) -> Unit) {
     var caption by remember { mutableStateOf("") }
     var isAiTagEnabled by remember { mutableStateOf(false) }
+    var selectedVisibility by remember { mutableStateOf(Visibility.PUBLIC) }
+
 
     Column(modifier = Modifier
         .fillMaxWidth()
@@ -99,7 +102,9 @@ fun NewPostScreen(uri: String) {
 
         HorizontalDivider()
         VisibilitySelector(
-            onVisibilitySelected = { selectedVisibility ->
+            selectedVisibility,
+            onVisibilitySelected = { it ->
+                selectedVisibility = it
 
 
             }
@@ -110,7 +115,7 @@ fun NewPostScreen(uri: String) {
         Spacer(modifier = Modifier.weight(1f))
 
         Button(
-            onClick = { /* xử lý đăng */ },
+            onClick = {onPostSelected(uri,caption,selectedVisibility)},
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 30.dp)
@@ -145,10 +150,10 @@ fun SettingItem(
 }
 @Composable
 fun VisibilitySelector(
+    selectedVisibility: Visibility,
     onVisibilitySelected: (Visibility) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var selectedVisibility by remember { mutableStateOf(Visibility.PUBLIC) }
 
     // Hiển thị tên dựa trên giá trị enum hiện tại
     var displayName = when (selectedVisibility) {
@@ -186,7 +191,6 @@ Box(){
 
                 text = { Text("Công khai") },
                 onClick = {
-selectedVisibility = Visibility.PUBLIC
                     onVisibilitySelected(Visibility.PUBLIC)
                     expanded = false
                 }
@@ -195,7 +199,6 @@ selectedVisibility = Visibility.PUBLIC
             DropdownMenuItem(
                 text = { Text("Riêng tư") },
                 onClick = {
-                    selectedVisibility = Visibility.PRIVATE
                     onVisibilitySelected(Visibility.PRIVATE)
                     expanded = false
                 }
@@ -204,7 +207,6 @@ selectedVisibility = Visibility.PUBLIC
             DropdownMenuItem(
                 text = { Text("Người theo dõi") },
                 onClick = {
-                    selectedVisibility = Visibility.FOLLOWERS
                     onVisibilitySelected(Visibility.FOLLOWERS)
                     expanded = false
                 }
