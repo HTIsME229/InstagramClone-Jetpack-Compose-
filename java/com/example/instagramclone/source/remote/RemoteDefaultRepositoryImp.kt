@@ -67,6 +67,26 @@ catch (e: Exception) {
         }
     }
 
+    override fun loadListPostFollowing(userId: String): Flow<List<Post>?> = flow {
+        val data = hashMapOf(
+            "userId" to userId,
+        )
+        val baseUrl = "https://getfollowingposts-ba53qvmrba-uc.a.run.app"
+        val retrofit = createRetrofitService(baseUrl).create(InstagramService::class.java)
+        try {
+            val response = retrofit.loadListPostFollowing(data)
+            if (response.isSuccessful) {
+                emit(response.body())
+            } else {
+                emit(null)
+            }
+
+        }
+        catch (e: Exception) {
+            emit(null)
+        }
+    }
+
     private fun createRetrofitService(baseUrl: String): Retrofit {
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY  // Log toàn bộ request/response

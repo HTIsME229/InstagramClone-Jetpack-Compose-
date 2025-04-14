@@ -23,4 +23,7 @@ class DefaultRepositoryImpl @Inject constructor(
     override suspend fun uploadPost(post: Post): ResponseResult {
         return remoteRepository.uploadPost(post)
     }
+
+    override fun loadListPostFollowing(userId: String): Flow<List<Post>?> {
+return remoteRepository.loadListPostFollowing(userId)   }
 }

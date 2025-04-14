@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -113,6 +114,7 @@ fun InstagramApp() {
     val vm = hiltViewModel<AuthenticationViewModel>()
     val profileViewModel = hiltViewModel<ProfileViewModel>()
     val postViewModel = hiltViewModel<PostViewModel>()
+
     val context = LocalContext.current
     val navController = rememberNavController()
     val startDestination = if (checkLogin(vm)) {
@@ -128,7 +130,7 @@ fun InstagramApp() {
             SignUpScreen(navController = navController, vm = vm)
         }
         composable(DestinationScreen.Home.route) {
-            InstagramMainScreen(navController = navController, vm)
+            InstagramMainScreen(navController = navController, vm,postViewModel)
 
         }
         composable(DestinationScreen.Profile.route) {
@@ -236,7 +238,7 @@ fun GreetingPreview() {
 }
 
 @Composable
-fun InstagramMainScreen(navController: NavController, vm: AuthenticationViewModel) {
+fun InstagramMainScreen(navController: NavController, vm: AuthenticationViewModel,postViewModel: PostViewModel) {
     val tabs = remember {
         listOf(
             BottomNavItem(
@@ -271,10 +273,24 @@ fun InstagramMainScreen(navController: NavController, vm: AuthenticationViewMode
             )
         )
     }
-
+    val profile by vm._profile.observeAsState()
+    val userId = profile?.userId
+    val posts by postViewModel._listPostFollowing.observeAsState(initial = emptyList())
+    LaunchedEffect(userId) {
+        if (userId != null) {
+            postViewModel.loadListPostFollowing(userId)
+        }
+    }
     var selectedTabIndex by rememberSaveable { mutableStateOf(0) }
 
+
+
     Scaffold(
+        topBar = {
+            if (selectedTabIndex == 0) {
+                MyTopAppBar() // 👈 Đặt ở đây
+            }
+        },
         bottomBar = {
             MyBottomNavigation(items = tabs, selectedItemIndex = selectedTabIndex) {
                 selectedTabIndex = it
@@ -286,7 +302,6 @@ fun InstagramMainScreen(navController: NavController, vm: AuthenticationViewMode
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 20.dp)
                 .padding(paddingValues)
         ) {
             if (selectedTabIndex == 2) {
@@ -296,9 +311,9 @@ fun InstagramMainScreen(navController: NavController, vm: AuthenticationViewMode
             }
 
             when (selectedTabIndex) {
-                0 -> Home()
+                0 -> Home(posts)
                 4 -> ProfileScreen(vm, navController)
-                else -> Home()
+                else -> Home(posts)
             }
 
         }

@@ -9,6 +9,7 @@ interface DefaultRepository {
         suspend fun updateProfile(user: User): ResponseResult
         fun  findUserByUid(userId: String,tokenId:String):Flow<User?>
         suspend  fun uploadPost(post:Post) :ResponseResult
+        fun loadListPostFollowing (userId: String): Flow<List<Post>?>
     }
     interface LocalRepository{}
 

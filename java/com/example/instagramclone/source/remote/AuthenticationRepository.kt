@@ -70,6 +70,7 @@ class AuthenticationRepository {
                             }
                         }
                 } else {
+                    Log.e("FirebaseAuth", "Lỗi đăng nhập: ${task.exception?.message}")
                     onResult(false, task.exception?.message)
                 }
             }
