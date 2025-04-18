@@ -68,6 +68,8 @@ import com.example.instagramclone.ui.post.NewPostScreen
 import com.example.instagramclone.ui.profile.ProfileEditScreen
 import com.example.instagramclone.ui.profile.ProfileScreen
 import com.example.instagramclone.ui.profile.TopBar
+import com.example.instagramclone.ui.search.ExploreScreen
+import com.example.instagramclone.ui.search.SearchScreen
 import com.example.instagramclone.ui.theme.InstagramCloneTheme
 import com.example.instagramclone.ui.viewModel.AuthenticationViewModel
 import com.example.instagramclone.ui.viewModel.PostViewModel
@@ -165,16 +167,18 @@ fun InstagramApp() {
             if (uri != null) {
                 NewPostScreen(
                     uri = uri.toString(),
-                    onPostSelected = { postUri, caption, visibility ->
+                    onPostSelected = { postUri, caption,hashTag, visibility ->
                         vm.uploadFile(
                             postUri.toUri(),
                             onSuccess =  { it ->
                                 postViewModel.uploadPost(
                                     post = Post(
                                         userId = vm._profile.value?.userId.toString(),
+                                        userNamePost =  vm._profile.value?.userName!!,
                                         mediaUrl = it,
                                         caption = caption,
                                         visibility = visibility,
+                                        hashtags = hashTag
 
                                         ),
                                     onSuccess = {
@@ -312,6 +316,7 @@ fun InstagramMainScreen(navController: NavController, vm: AuthenticationViewMode
 
             when (selectedTabIndex) {
                 0 -> Home(posts)
+                1 -> SearchScreen()
                 4 -> ProfileScreen(vm, navController)
                 else -> Home(posts)
             }

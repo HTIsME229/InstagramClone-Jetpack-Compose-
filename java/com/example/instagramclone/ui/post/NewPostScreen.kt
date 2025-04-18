@@ -45,9 +45,11 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.instagramclone.data.model.Visibility
 
 @Composable
-fun NewPostScreen(uri: String,onPostSelected: (uri:String,caption:String,
+fun NewPostScreen(uri: String,onPostSelected: (uri:String,caption:String,hashTag: List<String>,
                                                selectedVisibility:Visibility) -> Unit) {
     var caption by remember { mutableStateOf("") }
+        var hashTag : List<String>by remember { mutableStateOf( emptyList())}
+
     var isAiTagEnabled by remember { mutableStateOf(false) }
     var selectedVisibility by remember { mutableStateOf(Visibility.PUBLIC) }
 
@@ -78,7 +80,9 @@ fun NewPostScreen(uri: String,onPostSelected: (uri:String,caption:String,
         HorizontalDivider()
         TextField(
             value = caption,
-            onValueChange = { caption = it },
+            onValueChange = { caption = it
+                             hashTag = extractHashtags(it)
+            },
             placeholder = { Text("Thêm chú thích...") },
             modifier = Modifier.fillMaxWidth()
         )
@@ -115,7 +119,7 @@ fun NewPostScreen(uri: String,onPostSelected: (uri:String,caption:String,
         Spacer(modifier = Modifier.weight(1f))
 
         Button(
-            onClick = {onPostSelected(uri,caption,selectedVisibility)},
+            onClick = {onPostSelected(uri,caption,hashTag,selectedVisibility)},
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 30.dp)
@@ -220,4 +224,10 @@ Box(){
 
     }
 
+}
+fun extractHashtags(caption: String): List<String> {
+    val pattern = "#\\w+".toRegex()
+    return pattern.findAll(caption)
+        .map { it.value }
+        .toList()
 }
