@@ -132,11 +132,11 @@ fun InstagramApp() {
             SignUpScreen(navController = navController, vm = vm)
         }
         composable(DestinationScreen.Home.route) {
-            InstagramMainScreen(navController = navController, vm,postViewModel)
+            InstagramMainScreen(navController = navController, vm,postViewModel,profileViewModel)
 
         }
         composable(DestinationScreen.Profile.route) {
-            ProfileScreen(vm, navController)
+            ProfileScreen(vm, profileViewModel,navController)
         }
         composable(DestinationScreen.editProfile.route) {
             ProfileEditScreen(vm,
@@ -242,7 +242,8 @@ fun GreetingPreview() {
 }
 
 @Composable
-fun InstagramMainScreen(navController: NavController, vm: AuthenticationViewModel,postViewModel: PostViewModel) {
+fun InstagramMainScreen(navController: NavController, vm: AuthenticationViewModel,postViewModel: PostViewModel
+                        ,profileViewModel: ProfileViewModel) {
     val tabs = remember {
         listOf(
             BottomNavItem(
@@ -283,7 +284,9 @@ fun InstagramMainScreen(navController: NavController, vm: AuthenticationViewMode
     LaunchedEffect(userId) {
         if (userId != null) {
             postViewModel.loadListPostFollowing(userId)
+            profileViewModel.loadMyListPost(userId)
         }
+
     }
     var selectedTabIndex by rememberSaveable { mutableStateOf(0) }
 
@@ -320,7 +323,7 @@ fun InstagramMainScreen(navController: NavController, vm: AuthenticationViewMode
                     postViewModel.searchUserAndPost(query =query )
 
                 },postViewModel)
-                4 -> ProfileScreen(vm, navController)
+                4 -> ProfileScreen(vm,  profileViewModel, navController)
                 else -> Home(posts)
             }
 

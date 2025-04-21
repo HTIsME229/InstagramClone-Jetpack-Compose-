@@ -12,7 +12,7 @@ interface DefaultRepository {
         suspend  fun uploadPost(post:Post) :ResponseResult
         fun loadListPostFollowing (userId: String): Flow<List<Post>?>
         suspend fun searchPostAndUser(query:String, type:String): DataSearchResponse
-
+fun loadMyListPost(userId: String): Flow<List<Post>?>
     }
     interface LocalRepository{}
 

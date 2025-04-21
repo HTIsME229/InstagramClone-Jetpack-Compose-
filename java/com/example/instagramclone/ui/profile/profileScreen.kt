@@ -32,7 +32,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import com.example.instagramclone.R
+import com.example.instagramclone.data.model.Post
 import com.example.instagramclone.data.model.User
+import com.example.instagramclone.ui.search.ExploreScreen
 import com.example.instagramclone.ui.viewModel.AuthenticationViewModel
 import com.example.instagramclone.ui.viewModel.ProfileViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -40,17 +42,21 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @Composable
 
-fun ProfileScreen( vm: AuthenticationViewModel, navController: NavController) {
+fun ProfileScreen( vm: AuthenticationViewModel,profileViewModel: ProfileViewModel, navController: NavController) {
         var user  = vm._profile.value
+    var listPost:List<Post> by remember { mutableStateOf(emptyList()) }
     vm._profile.observe(
         LocalLifecycleOwner.current
     ) { it ->
       user= it
     }
+    profileViewModel._myListPost.observe(LocalLifecycleOwner.current) {
+        if(it !=null)
+        listPost= it
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
     ) {
         // Top bar
         TopBar(user!!)
@@ -65,7 +71,7 @@ fun ProfileScreen( vm: AuthenticationViewModel, navController: NavController) {
         PostsTabSection()
 
         // Grid of posts
-        PostsGrid()
+        ExploreScreen(listPost)
     }
 }
 
@@ -294,28 +300,3 @@ fun TabItem(
     }
 }
 
-@Composable
-fun PostsGrid() {
-    // Create a list of post image resource IDs
-//    val posts = listOf(
-//        R.drawable.post1, R.drawable.post2, R.drawable.post3,
-//        R.drawable.post4, R.drawable.post5, R.drawable.post6,
-//        R.drawable.post7, R.drawable.post8, R.drawable.post9
-//    )
-//
-//    LazyVerticalGrid(
-//        columns = GridCells.Fixed(3),
-//        modifier = Modifier.height(800.dp) // Set a fixed height or calculate based on screen size
-//    ) {
-//        items(posts) { post ->
-//            Image(
-//                painter = painterResource(id = post),
-//                contentDescription = null,
-//                modifier = Modifier
-//                    .aspectRatio(1f)
-//                    .border(0.5.dp, Color.White),
-//                contentScale = ContentScale.Crop
-//            )
-//        }
-//    }
-}

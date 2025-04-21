@@ -55,7 +55,6 @@ import com.example.instagramclone.ui.viewModel.PostViewModel
 
 @Composable
 fun ExploreScreen(listPost:List<Post>) {
-
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         modifier = Modifier.fillMaxSize(),

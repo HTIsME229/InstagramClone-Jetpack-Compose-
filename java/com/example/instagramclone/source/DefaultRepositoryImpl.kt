@@ -31,4 +31,7 @@ return remoteRepository.loadListPostFollowing(userId)   }
     override suspend fun searchPostAndUser(query: String, type: String): DataSearchResponse {
         return remoteRepository.searchPostAndUser(query,type)
     }
+    override fun loadMyListPost(userId: String): Flow<List<Post>?> {
+        return remoteRepository.loadMyListPost(userId)
+    }
 }
