@@ -1,5 +1,6 @@
 package com.example.instagramclone.source.remote
 
+import com.example.instagramclone.data.DTO.DataSearchResponse
 import com.example.instagramclone.data.model.Post
 import com.example.instagramclone.data.model.User
 import com.example.instagramclone.source.DefaultRepository
@@ -84,6 +85,24 @@ catch (e: Exception) {
         }
         catch (e: Exception) {
             emit(null)
+        }
+    }
+
+    override suspend fun searchPostAndUser(query: String, type: String): DataSearchResponse {
+        val data = hashMapOf(
+            "query" to query,
+            "type" to type
+        )
+        val baseUrl = "https://search-ba53qvmrba-uc.a.run.app"
+        val retrofit = createRetrofitService(baseUrl).create(InstagramService::class.java)
+        try {
+            val response = retrofit.searchPostAndUser(data)
+            if (response.isSuccessful) {
+                return response.body()!!
+            } else
+                return DataSearchResponse(false)
+        } catch (_: Exception) {
+            return DataSearchResponse(false)
         }
     }
 

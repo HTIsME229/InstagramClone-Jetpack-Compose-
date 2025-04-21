@@ -316,7 +316,10 @@ fun InstagramMainScreen(navController: NavController, vm: AuthenticationViewMode
 
             when (selectedTabIndex) {
                 0 -> Home(posts)
-                1 -> SearchScreen()
+                1 -> SearchScreen(onSearchClick =  { query ->
+                    postViewModel.searchUserAndPost(query =query )
+
+                },postViewModel)
                 4 -> ProfileScreen(vm, navController)
                 else -> Home(posts)
             }

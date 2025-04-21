@@ -1,5 +1,6 @@
 package com.example.instagramclone.source.remote
 
+import com.example.instagramclone.data.DTO.DataSearchResponse
 import com.example.instagramclone.data.model.Post
 import com.example.instagramclone.data.model.User
 import com.example.instagramclone.source.ResponseResult
@@ -19,4 +20,7 @@ interface InstagramService {
     suspend fun  uploadPost(@Body post: Post): Response<ResponseResult>
     @GET("/")
     suspend fun  loadListPostFollowing(@QueryMap userId: Map<String, String>):Response<List<Post>?>
+    @POST("/")
+    suspend fun searchPostAndUser(@Body query: Map<String,String>): Response<DataSearchResponse>
+
 }

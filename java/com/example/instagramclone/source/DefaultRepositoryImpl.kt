@@ -1,5 +1,6 @@
 package com.example.instagramclone.source
 
+import com.example.instagramclone.data.DTO.DataSearchResponse
 import com.example.instagramclone.data.model.Post
 import com.example.instagramclone.data.model.User
 import com.example.instagramclone.source.local.LocalDefaultRepositoryImp
@@ -26,4 +27,8 @@ class DefaultRepositoryImpl @Inject constructor(
 
     override fun loadListPostFollowing(userId: String): Flow<List<Post>?> {
 return remoteRepository.loadListPostFollowing(userId)   }
+
+    override suspend fun searchPostAndUser(query: String, type: String): DataSearchResponse {
+        return remoteRepository.searchPostAndUser(query,type)
+    }
 }
