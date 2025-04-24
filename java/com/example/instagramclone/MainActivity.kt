@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.os.Message
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -36,8 +35,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -56,6 +57,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.instagramclone.data.model.Message
 import com.example.instagramclone.data.model.Post
 import com.example.instagramclone.ui.auth.LoginScreen
 import com.example.instagramclone.ui.auth.SignUpScreen
@@ -63,6 +65,8 @@ import com.example.instagramclone.ui.Bar.BottomNavItem
 import com.example.instagramclone.ui.Bar.MyBottomNavigation
 import com.example.instagramclone.ui.Bar.MyTopAppBar
 import com.example.instagramclone.ui.Home.Home
+import com.example.instagramclone.ui.chat.ChatInboxScreen
+import com.example.instagramclone.ui.chat.ChatScreen
 import com.example.instagramclone.ui.post.InstagramStylePicker
 import com.example.instagramclone.ui.post.NewPostScreen
 import com.example.instagramclone.ui.profile.ProfileEditScreen
@@ -72,6 +76,7 @@ import com.example.instagramclone.ui.search.ExploreScreen
 import com.example.instagramclone.ui.search.SearchScreen
 import com.example.instagramclone.ui.theme.InstagramCloneTheme
 import com.example.instagramclone.ui.viewModel.AuthenticationViewModel
+import com.example.instagramclone.ui.viewModel.ChatViewModel
 import com.example.instagramclone.ui.viewModel.PostViewModel
 import com.example.instagramclone.ui.viewModel.ProfileViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -82,6 +87,7 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.util.Date
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -108,6 +114,8 @@ sealed class DestinationScreen(val route: String) {
     object Likes : DestinationScreen("likes")
     object editProfile : DestinationScreen("edit_profile")
     object newPost : DestinationScreen("new_post/{encodedUri}")
+    object message : DestinationScreen("message")
+    object messageScreen : DestinationScreen("message/{userId}")
 
 }
 
@@ -116,7 +124,7 @@ fun InstagramApp() {
     val vm = hiltViewModel<AuthenticationViewModel>()
     val profileViewModel = hiltViewModel<ProfileViewModel>()
     val postViewModel = hiltViewModel<PostViewModel>()
-
+val chatViewModel = hiltViewModel<ChatViewModel>()
     val context = LocalContext.current
     val navController = rememberNavController()
     val startDestination = if (checkLogin(vm)) {
@@ -204,7 +212,46 @@ fun InstagramApp() {
                 )
             }
         }
+        composable(DestinationScreen.message.route) {
+            val currentUser  =vm._profile.value
+            val listConversation by chatViewModel.listConversation.collectAsState()
+            LaunchedEffect(currentUser?.userId) {
+                if(currentUser!=null){
+                    chatViewModel.fetchConversation(userId = currentUser.userId)
+                }
+            }
 
+
+            if(currentUser != null){
+                ChatInboxScreen(currentUser.userName,listConversation){
+                    chatViewModel.setCurrentConversation(it)
+                    val userId = URLEncoder.encode(it.userId, StandardCharsets.UTF_8.toString())
+                    navController.navigate("message/$userId")
+                }
+            }
+
+        }
+        composable(DestinationScreen.messageScreen.route) {backStackEntry ->
+            val currentUser  =vm._profile.value
+            val listMessage by chatViewModel.listMessage.collectAsState()
+
+            val encodedUri = backStackEntry.arguments?.getString("userId") ?: ""
+            val decodedUri = URLDecoder.decode(encodedUri, StandardCharsets.UTF_8.toString())
+            val userId = Uri.parse(decodedUri)
+            val currentConversation by chatViewModel.currentConversation.collectAsState()
+            LaunchedEffect(currentUser?.userId) {
+                if(currentUser!=null){
+                    chatViewModel.fetchMessage(  currentUser.userId,userId.toString())
+                }
+            }
+
+            if(currentUser!=null)
+            {
+            ChatScreen(currentConversation,listMessage,currentUser) { mess->
+                chatViewModel.sendMessage(Message(currentUser.userId,userId.toString(),mess))
+            }
+            }
+        }
 
     }
 }
@@ -295,7 +342,7 @@ fun InstagramMainScreen(navController: NavController, vm: AuthenticationViewMode
     Scaffold(
         topBar = {
             if (selectedTabIndex == 0) {
-                MyTopAppBar() // 👈 Đặt ở đây
+                MyTopAppBar({route -> navController.navigate(route)}) // 👈 Đặt ở đây
             }
         },
         bottomBar = {

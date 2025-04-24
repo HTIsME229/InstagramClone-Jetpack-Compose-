@@ -29,11 +29,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.compose.rememberNavController
 import com.example.instagramclone.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyTopAppBar() {
+fun MyTopAppBar(onNavigationClick: (route:String) -> Unit) {
     TopAppBar(
 
         title = {
@@ -76,7 +77,10 @@ fun MyTopAppBar() {
             }
 
             // Message Icon
-            IconButton(onClick = { /* Direct click */ }) {
+            IconButton(onClick = {
+                onNavigationClick("message")
+
+            }) {
                 Icon(
                     painter = painterResource(id = R.drawable.send),
                     contentDescription = "Direct"
