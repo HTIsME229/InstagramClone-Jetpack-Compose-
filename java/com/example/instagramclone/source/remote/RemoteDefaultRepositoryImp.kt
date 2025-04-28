@@ -88,6 +88,27 @@ catch (e: Exception) {
         }
     }
 
+    override fun loadLikedPost(userId: String): Flow<List<String>?> = flow {
+
+        val data = hashMapOf(
+            "userId" to userId,
+        )
+        val baseUrl = "https://getlikeposts-ba53qvmrba-uc.a.run.app"
+        val retrofit = createRetrofitService(baseUrl).create(InstagramService::class.java)
+        try {
+            val response = retrofit.loadLikedPost(data)
+            if (response.isSuccessful) {
+                emit(response.body())
+            } else {
+                emit(null)
+            }
+
+        }
+        catch (e: Exception) {
+            emit(null)
+        }
+    }
+
     override suspend fun searchPostAndUser(query: String, type: String): DataSearchResponse {
         val data = hashMapOf(
             "query" to query,
@@ -125,6 +146,25 @@ catch (e: Exception) {
             emit(null)
         }
 
+    }
+
+    override suspend fun toggleLikePost(userId: String, postId: String): ResponseResult {
+        val baseUrl = "https://togglelike-ba53qvmrba-uc.a.run.app"
+        val data = hashMapOf(
+            "userId" to userId,
+            "postId" to postId
+        )
+        val retrofit = createRetrofitService(baseUrl).create(InstagramService::class.java)
+        try {
+            val response = retrofit.toggleLikePost(data)
+            if (response.isSuccessful) {
+                return ResponseResult(true, null)
+            } else {
+                return ResponseResult(false, response.errorBody()?.string())
+            }
+        } catch (e: Exception) {
+            return ResponseResult(false, e.message)
+        }
     }
 
     private fun createRetrofitService(baseUrl: String): Retrofit {

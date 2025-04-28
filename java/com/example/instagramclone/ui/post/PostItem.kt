@@ -1,7 +1,9 @@
 package com.example.instagramclone.ui.post
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,6 +16,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,7 +39,13 @@ import com.example.instagramclone.R
 import com.example.instagramclone.data.model.Post
 import com.example.instagramclone.data.model.Story
 @Composable
-fun PostItem(post: Post) {
+fun PostItem(post: Post,listPostLiked:List<String>, likePost: (postId: String,
+                                                               onSuccess: () -> Unit,
+                                                               onFailure: (String) -> Unit) -> Unit =
+    { _, _, _ -> }
+)  {
+    var isLiked by remember  { mutableStateOf(listPostLiked.contains(post.postId)) }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -84,9 +96,27 @@ Spacer(modifier = Modifier.height(20.dp))
         horizontalArrangement = Arrangement.Start
     ) {
         Icon(
-            imageVector = Icons.Outlined.FavoriteBorder,
+            if(isLiked)
+           rememberAsyncImagePainter(R.drawable.like)
+            else
+                rememberAsyncImagePainter(R.drawable.unlike),
             contentDescription = "Like",
             modifier = Modifier.size(24.dp)
+                .clickable {
+                    isLiked = !isLiked
+                    likePost(post.postId,
+                        {
+
+
+                    },
+                     {
+                         Log.d("failLog", "fail")
+                            isLiked = !isLiked
+                        }
+                    )
+
+                },
+
         )
         Spacer(modifier = Modifier.width(12.dp))
 

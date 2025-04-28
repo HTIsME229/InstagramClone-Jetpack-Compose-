@@ -7,17 +7,27 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.instagramclone.data.model.Post
 
 @SuppressLint("SuspiciousIndentation")
 @Composable
-fun PostList(posts: List<Post>?) {
+fun PostList(posts: List<Post>?,listPostLiked:List<String>, likePost: (postId: String,
+                                                                       onSuccess: () -> Unit,
+                                                                       onFailure: (String) -> Unit) ->
+Unit = { _, _, _ -> }
+)  {
+
     if(posts  != null)
     LazyColumn {
         items(posts) { post ->
-            PostItem(post = post)
+
+            PostItem(post = post,listPostLiked,likePost)
             Spacer(modifier = Modifier.size(5.dp))
             HorizontalDivider()
             Spacer(modifier = Modifier.size(5.dp))

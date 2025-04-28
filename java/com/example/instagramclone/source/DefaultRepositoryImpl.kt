@@ -28,10 +28,18 @@ class DefaultRepositoryImpl @Inject constructor(
     override fun loadListPostFollowing(userId: String): Flow<List<Post>?> {
 return remoteRepository.loadListPostFollowing(userId)   }
 
+    override fun loadLikedPost(userId: String): Flow<List<String>?> {
+        return remoteRepository.loadLikedPost(userId)
+    }
+
     override suspend fun searchPostAndUser(query: String, type: String): DataSearchResponse {
         return remoteRepository.searchPostAndUser(query,type)
     }
     override fun loadMyListPost(userId: String): Flow<List<Post>?> {
         return remoteRepository.loadMyListPost(userId)
+    }
+
+    override suspend fun toggleLikePost(userId: String, postId: String): ResponseResult {
+        return remoteRepository.toggleLikePost(userId,postId)
     }
 }

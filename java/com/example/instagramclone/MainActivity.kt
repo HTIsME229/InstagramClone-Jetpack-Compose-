@@ -124,7 +124,7 @@ fun InstagramApp() {
     val vm = hiltViewModel<AuthenticationViewModel>()
     val profileViewModel = hiltViewModel<ProfileViewModel>()
     val postViewModel = hiltViewModel<PostViewModel>()
-val chatViewModel = hiltViewModel<ChatViewModel>()
+    val chatViewModel = hiltViewModel<ChatViewModel>()
     val context = LocalContext.current
     val navController = rememberNavController()
     val startDestination = if (checkLogin(vm)) {
@@ -140,16 +140,18 @@ val chatViewModel = hiltViewModel<ChatViewModel>()
             SignUpScreen(navController = navController, vm = vm)
         }
         composable(DestinationScreen.Home.route) {
-            InstagramMainScreen(navController = navController, vm,postViewModel,profileViewModel)
+            InstagramMainScreen(navController = navController, vm, postViewModel, profileViewModel)
 
         }
         composable(DestinationScreen.Profile.route) {
-            ProfileScreen(vm, profileViewModel,navController)
+            ProfileScreen(vm, profileViewModel, navController)
         }
         composable(DestinationScreen.editProfile.route) {
-            ProfileEditScreen(vm,
+            ProfileEditScreen(
+                vm,
                 onSave = {
-                    profileViewModel.updateProfile(it,
+                    profileViewModel.updateProfile(
+                        it,
                         onSuccess = { success, user ->
                             vm.setProfile(user)
                             navController.popBackStack()
@@ -175,20 +177,20 @@ val chatViewModel = hiltViewModel<ChatViewModel>()
             if (uri != null) {
                 NewPostScreen(
                     uri = uri.toString(),
-                    onPostSelected = { postUri, caption,hashTag, visibility ->
+                    onPostSelected = { postUri, caption, hashTag, visibility ->
                         vm.uploadFile(
                             postUri.toUri(),
-                            onSuccess =  { it ->
+                            onSuccess = { it ->
                                 postViewModel.uploadPost(
                                     post = Post(
                                         userId = vm._profile.value?.userId.toString(),
-                                        userNamePost =  vm._profile.value?.userName!!,
+                                        userNamePost = vm._profile.value?.userName!!,
                                         mediaUrl = it,
                                         caption = caption,
                                         visibility = visibility,
                                         hashtags = hashTag
 
-                                        ),
+                                    ),
                                     onSuccess = {
                                         navController.navigate(DestinationScreen.Home.route) {
                                             popUpTo(0) { inclusive = true }
@@ -204,26 +206,26 @@ val chatViewModel = hiltViewModel<ChatViewModel>()
 
                             },
                             onError =
-                            {
-                                showToast(context, it.message.toString())
-                            }
+                                {
+                                    showToast(context, it.message.toString())
+                                }
                         )
                     }
                 )
             }
         }
         composable(DestinationScreen.message.route) {
-            val currentUser  =vm._profile.value
+            val currentUser = vm._profile.value
             val listConversation by chatViewModel.listConversation.collectAsState()
             LaunchedEffect(currentUser?.userId) {
-                if(currentUser!=null){
+                if (currentUser != null) {
                     chatViewModel.fetchConversation(userId = currentUser.userId)
                 }
             }
 
 
-            if(currentUser != null){
-                ChatInboxScreen(currentUser.userName,listConversation){
+            if (currentUser != null) {
+                ChatInboxScreen(currentUser.userName, listConversation) {
                     chatViewModel.setCurrentConversation(it)
                     val userId = URLEncoder.encode(it.userId, StandardCharsets.UTF_8.toString())
                     navController.navigate("message/$userId")
@@ -231,8 +233,8 @@ val chatViewModel = hiltViewModel<ChatViewModel>()
             }
 
         }
-        composable(DestinationScreen.messageScreen.route) {backStackEntry ->
-            val currentUser  =vm._profile.value
+        composable(DestinationScreen.messageScreen.route) { backStackEntry ->
+            val currentUser = vm._profile.value
             val listMessage by chatViewModel.listMessage.collectAsState()
 
             val encodedUri = backStackEntry.arguments?.getString("userId") ?: ""
@@ -240,16 +242,15 @@ val chatViewModel = hiltViewModel<ChatViewModel>()
             val userId = Uri.parse(decodedUri)
             val currentConversation by chatViewModel.currentConversation.collectAsState()
             LaunchedEffect(currentUser?.userId) {
-                if(currentUser!=null){
-                    chatViewModel.fetchMessage(  currentUser.userId,userId.toString())
+                if (currentUser != null) {
+                    chatViewModel.fetchMessage(currentUser.userId, userId.toString())
                 }
             }
 
-            if(currentUser!=null)
-            {
-            ChatScreen(currentConversation,listMessage,currentUser) { mess->
-                chatViewModel.sendMessage(Message(currentUser.userId,userId.toString(),mess))
-            }
+            if (currentUser != null) {
+                ChatScreen(currentConversation, listMessage, currentUser) { mess ->
+                    chatViewModel.sendMessage(Message(currentUser.userId, userId.toString(), mess))
+                }
             }
         }
 
@@ -289,8 +290,12 @@ fun GreetingPreview() {
 }
 
 @Composable
-fun InstagramMainScreen(navController: NavController, vm: AuthenticationViewModel,postViewModel: PostViewModel
-                        ,profileViewModel: ProfileViewModel) {
+fun InstagramMainScreen(
+    navController: NavController,
+    vm: AuthenticationViewModel,
+    postViewModel: PostViewModel,
+    profileViewModel: ProfileViewModel
+) {
     val tabs = remember {
         listOf(
             BottomNavItem(
@@ -332,6 +337,7 @@ fun InstagramMainScreen(navController: NavController, vm: AuthenticationViewMode
         if (userId != null) {
             postViewModel.loadListPostFollowing(userId)
             profileViewModel.loadMyListPost(userId)
+            postViewModel.loadLikedPost(userId)
         }
 
     }
@@ -342,7 +348,7 @@ fun InstagramMainScreen(navController: NavController, vm: AuthenticationViewMode
     Scaffold(
         topBar = {
             if (selectedTabIndex == 0) {
-                MyTopAppBar({route -> navController.navigate(route)}) // 👈 Đặt ở đây
+                MyTopAppBar({ route -> navController.navigate(route) }) // 👈 Đặt ở đây
             }
         },
         bottomBar = {
@@ -365,15 +371,42 @@ fun InstagramMainScreen(navController: NavController, vm: AuthenticationViewMode
             }
 
             when (selectedTabIndex) {
-                0 -> Home(posts)
-                1 -> SearchScreen(onSearchClick =  { query ->
-                    postViewModel.searchUserAndPost(query =query )
+                0 -> Home(posts, { postId,onSuccess,onFailure ->
+                    postViewModel.toggleLikePost(
+                        userId = userId.toString(),
+                        postId = postId,
+                        onSuccess = {
 
-                },postViewModel)
-                4 -> ProfileScreen(vm,  profileViewModel, navController)
-                else -> Home(posts)
+                        },
+                        onError = {
+                            onFailure(it?:"Server error")
+                        }
+                    )
+
+                }, postViewModel)
+
+                1 -> SearchScreen(onSearchClick = { query ->
+                    postViewModel.searchUserAndPost(query = query)
+
+                }, postViewModel)
+
+                4 -> ProfileScreen(vm, profileViewModel, navController)
+                else -> Home(posts, { postId,onSuccess,onFailure ->
+                    postViewModel.toggleLikePost(
+                        userId = userId.toString(),
+                        postId = postId,
+                        onSuccess = {
+
+                        },
+                        onError = {
+                            Log.d("TAGonFailure", "onFailure: $it")
+                            onFailure(it?:"Server error")
+                        }
+                    )
+                }, postViewModel)
             }
 
         }
     }
+
 }

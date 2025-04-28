@@ -10,14 +10,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.instagramclone.data.model.Post
 import com.example.instagramclone.data.model.Story
 import com.example.instagramclone.ui.Bar.MyTopAppBar
+import com.example.instagramclone.ui.viewModel.PostViewModel
 
 @Composable
-fun Home( listPost : List<Post>?) {
+fun Home( listPost : List<Post>?,  likePost: (postId: String,
+                                              onSuccess: () -> Unit,
+                                              onFailure: (String) -> Unit) -> Unit = { _, _, _ -> }
+, postViewModel: PostViewModel) {
+    val listPostLiked by postViewModel._listPostLiked.collectAsState()
 
     val sampleStories = listOf(
         Story("Your Story", "https://your-image-url.com/1.jpg"),
@@ -30,7 +37,7 @@ fun Home( listPost : List<Post>?) {
     Column(modifier = Modifier.fillMaxSize()
     ) {
         StoryList(sampleStories)
-        NewFeedScreen(listPost)
+        NewFeedScreen(listPost,listPostLiked,likePost)
     }
 
 

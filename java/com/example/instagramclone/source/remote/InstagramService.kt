@@ -24,5 +24,8 @@ interface InstagramService {
     suspend fun searchPostAndUser(@Body query: Map<String,String>): Response<DataSearchResponse>
   @GET("/")
   suspend fun  loadMyListPost(@QueryMap userId: Map<String, String>):Response<List<Post>?>
-
+@POST("/")
+suspend fun  toggleLikePost(@Body request: Map<String,String>): Response<ResponseResult>
+  @GET("/")
+  suspend fun  loadLikedPost(@QueryMap userId: Map<String, String>):Response<List<String>?>
 }
