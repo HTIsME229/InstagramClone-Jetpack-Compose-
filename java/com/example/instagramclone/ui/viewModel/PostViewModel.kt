@@ -126,7 +126,13 @@ class PostViewModel @Inject constructor(
         viewModelScope.launch {
             val result = defaultRepositoryImpl.createComment(comment)
             if (result.success) {
-                getListCommentPost(comment.postId)
+                getListCommentPost(comment.postId,
+                    onSuccess = {
+                        onSuccess(true)
+                    },
+                    onError = {
+                        onError(it)
+                    })
                 onSuccess(true)
             } else {
                 onError(result.error)
@@ -134,14 +140,16 @@ class PostViewModel @Inject constructor(
         }
     }
 
-    fun getListCommentPost(postId: String) {
+    fun getListCommentPost(postId: String,onSuccess: (Boolean) -> Unit, onError: (String?) -> Unit) {
         viewModelScope.launch {
             val result = defaultRepositoryImpl.getListCommentPost(postId)
             result.collect {
                 if (it != null) {
                     listPostComment.value = it
+                    onSuccess(true)
                 } else {
                     listPostComment.value = emptyList()
+                    onError
                 }
             }
         }

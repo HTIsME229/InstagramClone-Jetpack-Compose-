@@ -41,7 +41,7 @@ fun Home(
     // Update posts with comments when they are loaded
     val updatedPosts = remember(listPost, listPostComment) {
         listPost?.map { post ->
-            if (listPostComment.isNotEmpty()) {
+            if (listPostComment.isNotEmpty() && post.postId == listPostComment[0].postId) {
                 post.copy(comments = listPostComment)
             } else {
                 post
@@ -81,8 +81,13 @@ fun Home(
                 )
             },
             onLoadComment = { postId, onSuccess, onError ->
-                postViewModel.getListCommentPost(postId)
-                onSuccess()
+                postViewModel.getListCommentPost(postId,{
+                    onSuccess()
+                }, {
+                    onError()
+                })
+
+
             }
         )
     }

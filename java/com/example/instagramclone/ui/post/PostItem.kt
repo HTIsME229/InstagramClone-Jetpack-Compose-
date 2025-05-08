@@ -46,7 +46,8 @@ import com.example.instagramclone.data.model.Post
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostItem(
-    post: Post, listPostLiked: List<String>, likePost: (
+    post: Post,
+    listPostLiked: List<String>, likePost: (
         postId: String,
         onSuccess: () -> Unit,
         onFailure: (String) -> Unit,
@@ -61,16 +62,20 @@ fun PostItem(
 ) {
     var isLiked by remember { mutableStateOf(listPostLiked.contains(post.postId)) }
     var showBottomSheet by remember { mutableStateOf(false) }
-
-    // Load comments when bottom sheet is shown
-    LaunchedEffect(showBottomSheet) {
-        if (showBottomSheet) {
+    var currentPostId by remember { mutableStateOf("") }
+    var isLoadingComments by remember { mutableStateOf(false) }
+    // Load comments only when postId changes or bottom sheet is shown
+    LaunchedEffect(showBottomSheet, post.postId) {
+        if (showBottomSheet && post.postId != currentPostId) {
+            currentPostId = post.postId
+            isLoadingComments = true
             onLoadComment(
                 post.postId,
                 {
-                    // Comments loaded successfully
+                    isLoadingComments = false
                 },
                 {
+
                     showBottomSheet = false
                 }
             )
@@ -158,16 +163,23 @@ fun PostItem(
             modifier = Modifier
                 .size(24.dp)
                 .clickable {
-                    onLoadComment(
-                        post.postId,
-                        {
-                            showBottomSheet = true
-                        },
-                       {
-                            Log.d("loadComment", "Failed to load comments")
-                            showBottomSheet = false
-                        }
-                    )
+                    if (post.postId != currentPostId) {
+                        currentPostId = post.postId
+                        isLoadingComments = true
+                        onLoadComment(
+                            post.postId,
+                            {
+                                isLoadingComments = false
+                                showBottomSheet = true
+
+                            },
+                            {
+                                Log.d("loadComment", "Failed to load comments")
+                            }
+                        )
+                    } else {
+                        showBottomSheet = true
+                    }
                 }
         )
         Spacer(modifier = Modifier.width(12.dp))
@@ -215,15 +227,22 @@ fun PostItem(
                 modifier = Modifier
                     .padding(horizontal = 8.dp, vertical = 4.dp)
                     .clickable {
-                        onLoadComment(
-                            post.postId,
-                            {
-                                showBottomSheet = true
-                            },
-                       {
-                                Log.d("loadComment", "Failed to load comments")
-                            }
-                        )
+                        if (post.postId != currentPostId) {
+                            currentPostId = post.postId
+                            isLoadingComments = true
+                            onLoadComment(
+                                post.postId,
+                                {
+                                    isLoadingComments = false
+                                    showBottomSheet = true
+                                },
+                                {
+                                    Log.d("loadComment", "Failed to load comments")
+                                }
+                            )
+                        } else {
+                            showBottomSheet = true
+                        }
                     }
             )
         }
@@ -234,7 +253,8 @@ fun PostItem(
             showSheet = showBottomSheet,
             onDismiss = { showBottomSheet = false },
             comments = post.comments,
-            onPostComment = onPostComment
+            onPostComment = onPostComment,
+            isLoading = isLoadingComments
         )
     }
 }

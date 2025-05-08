@@ -51,7 +51,9 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import com.example.instagramclone.source.enum.StateMessage
 import kotlinx.coroutines.launch
@@ -63,7 +65,8 @@ fun InstagramCommentModalBottomSheet(
     showSheet: Boolean,
     onDismiss: () -> Unit,
     onPostComment: (String,String, onSuccess: () -> Unit, onError: (String) -> Unit) -> Unit = { _, _, _, _ -> },
-    comments: List<Comment>
+    comments: List<Comment>,
+    isLoading: Boolean,
 ) {
     var localComments by remember { mutableStateOf(comments) }
     var pendingComment by remember { mutableStateOf<Comment?>(null) }
@@ -150,7 +153,8 @@ fun InstagramCommentModalBottomSheet(
                                 failedComment = tempComment
                             }
                         )
-                    }
+                    },
+                    isLoading = isLoading,
                 )
             }
         }
@@ -165,7 +169,8 @@ fun SheetContent(
     failedComment: Comment?,
     onDismiss: () -> Unit,
     onPostComment: (String) -> Unit = { _ -> },
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isLoading: Boolean,
 ) {
     var commentText by remember { mutableStateOf("") }
 
@@ -197,6 +202,31 @@ fun SheetContent(
                 .fillMaxWidth()
                 .weight(1f)
         ) {
+            item {
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(40.dp),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                } else if (comments.isEmpty()) {
+                    Text(
+                        text = "Chưa có bình luận nào",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
             items(comments) { comment ->
                 CommentItem(
                     comment = comment,
@@ -209,46 +239,47 @@ fun SheetContent(
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
-    }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .imePadding()
-            .background(Color.White),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Image(
-            painter = painterResource(R.drawable.avatar),
-            contentDescription = null,
+        Row(
             modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-        )
+                .fillMaxWidth()
+                .imePadding()
+                .background(Color.White),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                painter = painterResource(R.drawable.avatar),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+            )
 
-        OutlinedTextField(
-            value = commentText,
-            onValueChange = { commentText = it },
-            placeholder = { Text("Thêm bình luận...") },
-            modifier = Modifier
-                .weight(1f)
-                .padding(16.dp)
-                .height(56.dp),
-            trailingIcon = {
-                if (commentText.isNotEmpty()) {
-                    Text(
-                        text = "Đăng",
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .clickable {
-                                onPostComment(commentText)
-                                commentText = ""
-                            }
-                            .padding(horizontal = 8.dp)
-                    )
+            OutlinedTextField(
+                value = commentText,
+                onValueChange = { commentText = it },
+                placeholder = { Text("Thêm bình luận...") },
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(16.dp)
+                    .height(56.dp),
+                trailingIcon = {
+                    if (commentText.isNotEmpty()) {
+                        Text(
+                            text = "Đăng",
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .clickable {
+                                    onPostComment(commentText)
+                                    commentText = ""
+                                }
+                                .padding(horizontal = 8.dp)
+                        )
+                    }
                 }
-            }
-        )
+            )
+        }
     }
+
+
 }
 
