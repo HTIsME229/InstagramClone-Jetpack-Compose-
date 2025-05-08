@@ -40,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 
 @Composable
 fun InstagramStylePicker(
@@ -165,7 +166,13 @@ Box(   modifier = Modifier
             // Ảnh được chọn
             selectedImage?.let {
                 Image(
-                    painter = rememberAsyncImagePainter(it),
+                    painter = rememberAsyncImagePainter(
+                        model = ImageRequest.Builder(context)
+                            .data(it)
+                            .size(1000, 1000)  // Giới hạn kích thước ảnh (width, height)
+                            .build()
+
+                    ),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -181,7 +188,13 @@ Box(   modifier = Modifier
             ) {
                 items(images) { imageUri ->
                     Image(
-                        painter = rememberAsyncImagePainter(imageUri),
+                        painter = rememberAsyncImagePainter(
+                            model = ImageRequest.Builder(context)
+                                .data(imageUri)
+                                .size(1000, 1000)  // Giới hạn kích thước ảnh (width, height)
+                                .build()
+
+                        ),
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier

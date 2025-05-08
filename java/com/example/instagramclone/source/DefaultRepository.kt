@@ -1,6 +1,7 @@
 package com.example.instagramclone.source
 
 import com.example.instagramclone.data.DTO.DataSearchResponse
+import com.example.instagramclone.data.model.Comment
 import com.example.instagramclone.data.model.Post
 import com.example.instagramclone.data.model.User
 import kotlinx.coroutines.flow.Flow
@@ -15,6 +16,8 @@ interface DefaultRepository {
         suspend fun searchPostAndUser(query:String, type:String): DataSearchResponse
 fun loadMyListPost(userId: String): Flow<List<Post>?>
       suspend  fun toggleLikePost(userId: String, postId: String): ResponseResult
+      suspend fun  createComment(comment: Comment): ResponseResult
+      fun getListCommentPost(postId: String): Flow<List<Comment>?>
     }
     interface LocalRepository{}
 

@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.instagramclone.data.model.Comment
 import com.example.instagramclone.data.model.Post
 import com.example.instagramclone.data.model.User
 import com.example.instagramclone.source.DefaultRepositoryImpl
@@ -26,6 +27,8 @@ class PostViewModel @Inject constructor(
     val _listUserSearched: LiveData<List<User>?> = listUserSearched
     val listPostSearched = MutableLiveData<List<Post>?>()
     val _listPostSearched: LiveData<List<Post>?> = listPostSearched
+    val listPostComment : MutableStateFlow<List<Comment>> = MutableStateFlow(emptyList())
+    val _listPostComment: StateFlow<List<Comment>> = listPostComment
     var hadLikedPostFetch = false
     fun uploadPost(post: Post, onSuccess: (Boolean) -> Unit, onError: (String?) -> Unit) {
         viewModelScope.launch {
@@ -115,5 +118,32 @@ class PostViewModel @Inject constructor(
         }
     }
 
+    fun createComment(
+        comment: Comment,
+        onSuccess: (Boolean) -> Unit,
+        onError: (String?) -> Unit
+    ) {
+        viewModelScope.launch {
+            val result = defaultRepositoryImpl.createComment(comment)
+            if (result.success) {
+                getListCommentPost(comment.postId)
+                onSuccess(true)
+            } else {
+                onError(result.error)
+            }
+        }
+    }
 
+    fun getListCommentPost(postId: String) {
+        viewModelScope.launch {
+            val result = defaultRepositoryImpl.getListCommentPost(postId)
+            result.collect {
+                if (it != null) {
+                    listPostComment.value = it
+                } else {
+                    listPostComment.value = emptyList()
+                }
+            }
+        }
+    }
 }

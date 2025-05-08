@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.instagramclone.data.model.Comment
 import com.example.instagramclone.data.model.Post
 
 @SuppressLint("SuspiciousIndentation")
@@ -21,13 +22,18 @@ fun PostList(posts: List<Post>?,listPostLiked:List<String>, likePost: (postId: S
                                                                        onSuccess: () -> Unit,
                                                                        onFailure: (String) -> Unit) ->
 Unit = { _, _, _ -> }
+             ,
+             onPostComment: (String, String, onSuccess: () -> Unit, onError: (String) -> Unit) -> Unit = { _, _, _, _ -> },
+             onLoadComment: (postId: String,
+                            onSuccess: () -> Unit,
+                            onError: () -> Unit) -> Unit = { _, _, _ -> }
 )  {
 
     if(posts  != null)
     LazyColumn {
         items(posts) { post ->
 
-            PostItem(post = post,listPostLiked,likePost)
+            PostItem(post = post,listPostLiked,likePost,onPostComment,onLoadComment)
             Spacer(modifier = Modifier.size(5.dp))
             HorizontalDivider()
             Spacer(modifier = Modifier.size(5.dp))

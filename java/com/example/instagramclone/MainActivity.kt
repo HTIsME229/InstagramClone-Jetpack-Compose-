@@ -57,6 +57,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.instagramclone.data.model.Comment
 import com.example.instagramclone.data.model.Message
 import com.example.instagramclone.data.model.Post
 import com.example.instagramclone.ui.auth.LoginScreen
@@ -381,9 +382,11 @@ fun InstagramMainScreen(
                         onError = {
                             onFailure(it?:"Server error")
                         }
+
                     )
 
-                }, postViewModel)
+                }, postViewModel,vm
+                 )
 
                 1 -> SearchScreen(onSearchClick = { query ->
                     postViewModel.searchUserAndPost(query = query)
@@ -403,7 +406,7 @@ fun InstagramMainScreen(
                             onFailure(it?:"Server error")
                         }
                     )
-                }, postViewModel)
+                }, postViewModel,vm)
             }
 
         }

@@ -1,6 +1,7 @@
 package com.example.instagramclone.source
 
 import com.example.instagramclone.data.DTO.DataSearchResponse
+import com.example.instagramclone.data.model.Comment
 import com.example.instagramclone.data.model.Post
 import com.example.instagramclone.data.model.User
 import com.example.instagramclone.source.local.LocalDefaultRepositoryImp
@@ -42,4 +43,10 @@ return remoteRepository.loadListPostFollowing(userId)   }
     override suspend fun toggleLikePost(userId: String, postId: String): ResponseResult {
         return remoteRepository.toggleLikePost(userId,postId)
     }
+
+    override suspend fun createComment(comment: Comment): ResponseResult {
+return remoteRepository.createComment(comment)   }
+
+    override fun getListCommentPost(postId: String): Flow<List<Comment>?> {
+return remoteRepository.getListCommentPost(postId)   }
 }

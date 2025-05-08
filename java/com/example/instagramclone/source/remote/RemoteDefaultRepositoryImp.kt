@@ -1,6 +1,7 @@
 package com.example.instagramclone.source.remote
 
 import com.example.instagramclone.data.DTO.DataSearchResponse
+import com.example.instagramclone.data.model.Comment
 import com.example.instagramclone.data.model.Post
 import com.example.instagramclone.data.model.User
 import com.example.instagramclone.source.DefaultRepository
@@ -164,6 +165,42 @@ catch (e: Exception) {
             }
         } catch (e: Exception) {
             return ResponseResult(false, e.message)
+        }
+    }
+
+    override suspend fun createComment(comment: Comment): ResponseResult {
+        val baseUrl = "https://createcomment-ba53qvmrba-uc.a.run.app"
+        val retrofit = createRetrofitService(baseUrl).create(InstagramService::class.java)
+        try {
+            val response = retrofit.createComment(comment)
+            if (response.isSuccessful) {
+                return ResponseResult(true, null)
+            } else {
+                return ResponseResult(false, response.errorBody()?.string())
+            }
+        } catch (e: Exception) {
+            return ResponseResult(false, e.message)
+        }
+    }
+
+    override fun getListCommentPost(postId: String): Flow<List<Comment>?> = flow {
+        val data = hashMapOf(
+            "postId" to postId,
+        )
+        val baseUrl = "https://getcommentsbypostid-ba53qvmrba-uc.a.run.app"
+        val retrofit = createRetrofitService(baseUrl).create(InstagramService::class.java)
+        try {
+            val response = retrofit.getListCommentPost(data)
+            val body  = response.body()!!.data
+            if (response.isSuccessful) {
+                emit(body)
+            } else {
+                emit(null)
+            }
+
+        }
+        catch (e: Exception) {
+            emit(null)
         }
     }
 

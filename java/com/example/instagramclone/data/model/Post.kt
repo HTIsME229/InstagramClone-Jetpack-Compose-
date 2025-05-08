@@ -27,6 +27,7 @@ data class Comment(
     var postId: String = "",
     var description: String = "",
     var timeComment : String = "",
+    var likeCount: Int=0,
 )
 enum class Visibility {
     PUBLIC,

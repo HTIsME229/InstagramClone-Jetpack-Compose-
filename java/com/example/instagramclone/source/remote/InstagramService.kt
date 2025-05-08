@@ -1,8 +1,10 @@
 package com.example.instagramclone.source.remote
 
 import com.example.instagramclone.data.DTO.DataSearchResponse
+import com.example.instagramclone.data.model.Comment
 import com.example.instagramclone.data.model.Post
 import com.example.instagramclone.data.model.User
+import com.example.instagramclone.source.ResponseCommentResult
 import com.example.instagramclone.source.ResponseResult
 import kotlinx.coroutines.flow.Flow
 import retrofit2.Response
@@ -28,4 +30,9 @@ interface InstagramService {
 suspend fun  toggleLikePost(@Body request: Map<String,String>): Response<ResponseResult>
   @GET("/")
   suspend fun  loadLikedPost(@QueryMap userId: Map<String, String>):Response<List<String>?>
+  @POST("/")
+  suspend fun createComment(@Body comment: Comment): Response<ResponseResult>
+  @GET("/")
+  suspend fun getListCommentPost(@QueryMap postId: Map<String, String>):Response<ResponseCommentResult>
+
 }
