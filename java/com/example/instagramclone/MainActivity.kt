@@ -57,6 +57,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.cloudinary.android.MediaManager
 import com.example.instagramclone.data.model.Comment
 import com.example.instagramclone.data.model.Message
 import com.example.instagramclone.data.model.Post
@@ -95,6 +96,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val config = hashMapOf<String, Any>(
+            "cloud_name" to BuildConfig.CLOUDINARY_CLOUD_NAME,
+            "secure" to true
+        )
+
+        MediaManager.init(this, config)
         enableEdgeToEdge()
         setContent {
             InstagramCloneTheme {
@@ -173,13 +180,14 @@ fun InstagramApp() {
         }
         composable(DestinationScreen.newPost.route) { backStackEntry ->
             val encodedUri = backStackEntry.arguments?.getString("encodedUri") ?: ""
+            val context = LocalContext.current
             val decodedUri = URLDecoder.decode(encodedUri, StandardCharsets.UTF_8.toString())
             val uri = Uri.parse(decodedUri)
             if (uri != null) {
                 NewPostScreen(
                     uri = uri.toString(),
                     onPostSelected = { postUri, caption, hashTag, visibility ->
-                        vm.uploadFile(
+                        vm.uploadFile( context,
                             postUri.toUri(),
                             onSuccess = { it ->
                                 postViewModel.uploadPost(

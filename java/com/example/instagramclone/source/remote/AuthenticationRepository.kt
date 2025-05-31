@@ -1,6 +1,7 @@
 package com.example.instagramclone.source.remote
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
@@ -10,8 +11,19 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
-import java.util.UUID
-
+import com.cloudinary.android.MediaManager
+import com.cloudinary.android.callback.UploadCallback
+import com.example.instagramclone.BuildConfig
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
 
 class AuthenticationRepository {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
@@ -136,23 +148,88 @@ class AuthenticationRepository {
                 }
             }
     }
+
     fun uploadFile(
+        context: Context,
         fileUri: Uri,
         onSuccess: (String) -> Unit,
-        onError:  (Exception) -> Unit = {}
+        onError: (Exception) -> Unit = {}
     ) {
-        val storageRef = storage.reference
-        val fileName = "images/${UUID.randomUUID()}.jpg"
-        val fileRef = storageRef.child(fileName)
+        // Sử dụng coroutine để không block UI thread
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val result = uploadToCloudinary(context, fileUri)
 
-        fileRef.putFile(fileUri)
-            .addOnSuccessListener {
-                fileRef.downloadUrl.addOnSuccessListener { uri ->
-                    onSuccess(uri.toString()) // Gọi hàm khi upload thành công
+                // Chuyển về Main thread để update UI
+                withContext(Dispatchers.Main) {
+                    if (result != null) {
+                        onSuccess(result)
+                    } else {
+                        onError(Exception("Upload failed - no URL returned"))
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    onError(e)
                 }
             }
-            .addOnFailureListener { exception ->
-                onError(exception) // Gọi hàm khi lỗi
+        }
+    }
+    private suspend fun uploadToCloudinary(context: Context, fileUri: Uri): String? {
+        return withContext(Dispatchers.IO) {
+            try {
+                Log.d("Cloudinary", "=== BUILD CONFIG DEBUG ===")
+                Log.d("Cloudinary", "CLOUDINARY_CLOUD_NAME: '${BuildConfig.CLOUDINARY_CLOUD_NAME}'")
+                Log.d("Cloudinary", "CLOUDINARY_UPLOAD_PRESET: '${BuildConfig.CLOUDINARY_UPLOAD_PRESET}'")
+                Log.d("Cloudinary", "Cloud Name Length: ${BuildConfig.CLOUDINARY_CLOUD_NAME.length}")
+                Log.d("Cloudinary", "Upload Preset Length: ${BuildConfig.CLOUDINARY_UPLOAD_PRESET.length}")
+                Log.d("Cloudinary", "==========================")
+                // Đọc file
+                val inputStream = context.contentResolver.openInputStream(fileUri)
+                val fileBytes = inputStream?.readBytes()
+                inputStream?.close()
+
+                if (fileBytes == null) {
+                    throw Exception("Cannot read file")
+                }
+
+                // Tạo multipart request
+                val requestBody = MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart(
+                        "file",
+                        "upload.jpg",
+                        fileBytes.toRequestBody("image/*".toMediaTypeOrNull())
+                    )
+                    .addFormDataPart("upload_preset", BuildConfig.CLOUDINARY_UPLOAD_PRESET)
+                    .build()
+
+                // Tạo request
+                val request = Request.Builder()
+                    .url("https://api.cloudinary.com/v1_1/${BuildConfig.CLOUDINARY_CLOUD_NAME}/image/upload")
+                    .post(requestBody)
+                    .build()
+
+                // Execute request
+                val client = OkHttpClient.Builder()
+                    .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                    .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                    .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                    .build()
+
+                val response = client.newCall(request).execute()
+
+                if (response.isSuccessful) {
+                    val responseBody = response.body?.string()
+                    val jsonResponse = JSONObject(responseBody ?: "")
+                    jsonResponse.getString("secure_url")
+                } else {
+                    throw Exception("HTTP ${response.code}: ${response.message}")
+                }
+
+            } catch (e: Exception) {
+                throw e
             }
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.instagramclone.ui.viewModel
 
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.Composable
@@ -73,8 +74,8 @@ fun login(email:String,password:String,onResult: (Boolean, String?) -> Unit) {
             }
         }
     }
-    fun uploadFile(uri: Uri,onSuccess: (String) -> Unit, onError:  (Exception) -> Unit = {}) {
-        authenticationRepository.uploadFile(uri,
+    fun uploadFile(context:Context,uri: Uri,onSuccess: (String) -> Unit, onError:  (Exception) -> Unit = {}) {
+        authenticationRepository.uploadFile(context,uri,
                  {
                      onSuccess(it)
                  }, {

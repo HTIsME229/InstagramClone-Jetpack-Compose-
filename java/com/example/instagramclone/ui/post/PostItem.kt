@@ -114,7 +114,7 @@ fun PostItem(
         // Post Image (pager nếu nhiều ảnh)
 
         Image(
-            painter = rememberAsyncImagePainter("https://github.com/HTIsME229/LTC-_Chuong1/blob/bai1/avatar1.png?raw=true"),
+            painter = rememberAsyncImagePainter(post.mediaUrl),
             contentDescription = null,
             modifier = Modifier
                 .fillMaxWidth()
