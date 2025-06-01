@@ -178,39 +178,40 @@ class AuthenticationRepository {
     private suspend fun uploadToCloudinary(context: Context, fileUri: Uri): String? {
         return withContext(Dispatchers.IO) {
             try {
-                Log.d("Cloudinary", "=== BUILD CONFIG DEBUG ===")
-                Log.d("Cloudinary", "CLOUDINARY_CLOUD_NAME: '${BuildConfig.CLOUDINARY_CLOUD_NAME}'")
-                Log.d("Cloudinary", "CLOUDINARY_UPLOAD_PRESET: '${BuildConfig.CLOUDINARY_UPLOAD_PRESET}'")
-                Log.d("Cloudinary", "Cloud Name Length: ${BuildConfig.CLOUDINARY_CLOUD_NAME.length}")
-                Log.d("Cloudinary", "Upload Preset Length: ${BuildConfig.CLOUDINARY_UPLOAD_PRESET.length}")
-                Log.d("Cloudinary", "==========================")
-                // Đọc file
-                val inputStream = context.contentResolver.openInputStream(fileUri)
+                val contentResolver = context.contentResolver
+                val mimeType = contentResolver.getType(fileUri) ?: "application/octet-stream"
+                val isVideo = mimeType.startsWith("video")
+                val isImage = mimeType.startsWith("image")
+
+                val inputStream = contentResolver.openInputStream(fileUri)
                 val fileBytes = inputStream?.readBytes()
                 inputStream?.close()
 
-                if (fileBytes == null) {
-                    throw Exception("Cannot read file")
-                }
+                if (fileBytes == null) throw Exception("Cannot read file")
 
-                // Tạo multipart request
+                val fileName = if (isVideo) "upload.mp4" else "upload.jpg"
+
                 val requestBody = MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
                     .addFormDataPart(
                         "file",
-                        "upload.jpg",
-                        fileBytes.toRequestBody("image/*".toMediaTypeOrNull())
+                        fileName,
+                        fileBytes.toRequestBody(mimeType.toMediaTypeOrNull())
                     )
                     .addFormDataPart("upload_preset", BuildConfig.CLOUDINARY_UPLOAD_PRESET)
                     .build()
 
-                // Tạo request
+                val mediaTypePath = when {
+                    isVideo -> "video"
+                    isImage -> "image"
+                    else -> throw Exception("Unsupported media type: $mimeType")
+                }
+
                 val request = Request.Builder()
-                    .url("https://api.cloudinary.com/v1_1/${BuildConfig.CLOUDINARY_CLOUD_NAME}/image/upload")
+                    .url("https://api.cloudinary.com/v1_1/${BuildConfig.CLOUDINARY_CLOUD_NAME}/$mediaTypePath/upload")
                     .post(requestBody)
                     .build()
 
-                // Execute request
                 val client = OkHttpClient.Builder()
                     .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
                     .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
@@ -232,4 +233,5 @@ class AuthenticationRepository {
             }
         }
     }
+
 }

@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -32,13 +34,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
+import coil.request.videoFrameMillis
 import com.example.instagramclone.R
 import com.example.instagramclone.data.model.Comment
 import com.example.instagramclone.data.model.Post
@@ -112,15 +118,20 @@ fun PostItem(
         }
 
         // Post Image (pager nếu nhiều ảnh)
+        if (post.mediaUrl.contains("https://res.cloudinary.com/dwbsddywc/video/upload")) {
+            VideoPlayer(uri = post.mediaUrl.toUri())
 
-        Image(
-            painter = rememberAsyncImagePainter(post.mediaUrl),
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp),
-            contentScale = ContentScale.Crop
-        )
+        } else {
+            Image(
+                painter = rememberAsyncImagePainter(post.mediaUrl),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp),
+                contentScale = ContentScale.Crop
+            )
+        }
+
     }
     Spacer(modifier = Modifier.height(20.dp))
     Row(

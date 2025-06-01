@@ -5,10 +5,12 @@ import android.content.ContentUris
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,14 +20,20 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,9 +46,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import coil.request.videoFrameMillis
 
 @Composable
 fun InstagramStylePicker(
@@ -48,29 +61,40 @@ fun InstagramStylePicker(
 ) {
     val context = LocalContext.current
     var images by remember { mutableStateOf<List<Uri>>(emptyList()) }
-    var selectedImage by remember { mutableStateOf<Uri?>(null) }
+    var videos by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    var allMedia by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    var selectedMedia by remember { mutableStateOf<Uri?>(null) }
     var hasPermission by remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED ||
-                    ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.READ_MEDIA_IMAGES
-                    ) == PackageManager.PERMISSION_GRANTED
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.READ_MEDIA_IMAGES
+                ) == PackageManager.PERMISSION_GRANTED &&
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.READ_MEDIA_VIDEO
+                        ) == PackageManager.PERMISSION_GRANTED
+            } else {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                ) == PackageManager.PERMISSION_GRANTED
+            }
         )
     }
 
     // Permission launcher
     val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        hasPermission = isGranted
-        if (isGranted) {
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        hasPermission = permissions.values.any { it }
+        if (hasPermission) {
             images = loadGalleryImages(context)
+            videos = loadGalleryVideos(context)
+             allMedia = images + videos
             if (images.isNotEmpty()) {
-                selectedImage = images.first()
+                selectedMedia = images.first()
             }
         }
     }
@@ -81,10 +105,13 @@ fun InstagramStylePicker(
     // Request permission and load images if permission is granted
     LaunchedEffect(hasPermission) {
         if (hasPermission) {
+
             showPermissionDialog = false
             images = loadGalleryImages(context)
+            videos = loadGalleryVideos(context)
+            allMedia = images + videos
             if (images.isNotEmpty()) {
-                selectedImage = images.first()
+                selectedMedia = images.first()
             }
         }
     }
@@ -101,12 +128,12 @@ Box(   modifier = Modifier
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(text = "Bài viết mới", fontWeight = FontWeight.Bold)
-            if (hasPermission && selectedImage != null) {
+            if (hasPermission && selectedMedia != null) {
                 Text(
                     text = "Tiếp",
                     color = Color.Blue,
                     modifier = Modifier.clickable {
-                        selectedImage?.let(onNextClicked)
+                        selectedMedia?.let(onNextClicked)
                     }
                 )
             }
@@ -139,12 +166,15 @@ Box(   modifier = Modifier
                     confirmButton = {
                         androidx.compose.material3.TextButton(
                             onClick = {
-                                val permission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                                    Manifest.permission.READ_MEDIA_IMAGES
+                                val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    arrayOf(
+                                        Manifest.permission.READ_MEDIA_IMAGES,
+                                        Manifest.permission.READ_MEDIA_VIDEO
+                                    )
                                 } else {
-                                    Manifest.permission.READ_EXTERNAL_STORAGE
+                                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
                                 }
-                                permissionLauncher.launch(permission)
+                                permissionLauncher.launch(permissions)
                             }
                         ) {
                             Text("Cấp quyền")
@@ -164,21 +194,25 @@ Box(   modifier = Modifier
             }
         } else {
             // Ảnh được chọn
-            selectedImage?.let {
-                Image(
-                    painter = rememberAsyncImagePainter(
-                        model = ImageRequest.Builder(context)
-                            .data(it)
-                            .size(1000, 1000)  // Giới hạn kích thước ảnh (width, height)
-                            .build()
+            selectedMedia?.let {
+                if (isVideoUri(context, selectedMedia!!)) {
+                    VideoPlayer(uri = selectedMedia!!)
+                } else {
+                    Image(
+                        painter = rememberAsyncImagePainter(
+                            model = ImageRequest.Builder(context)
+                                .data(selectedMedia)
+                                .size(1000, 1000)
+                                .build()
+                        ),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1f)
+                    )
+                }
 
-                    ),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                )
             }
 
             // Grid ảnh
@@ -186,31 +220,138 @@ Box(   modifier = Modifier
                 columns = GridCells.Fixed(3),
                 modifier = Modifier.weight(1f)
             ) {
-                items(images) { imageUri ->
-                    Image(
-                        painter = rememberAsyncImagePainter(
-                            model = ImageRequest.Builder(context)
-                                .data(imageUri)
-                                .size(1000, 1000)  // Giới hạn kích thước ảnh (width, height)
-                                .build()
+                items(allMedia) { uri ->
+                    val isVideo = isVideoUri(context, uri)
+                    if (!isVideo) {
+                        Image(
+                            painter = rememberAsyncImagePainter(
+                                model = ImageRequest.Builder(context)
+                                    .data(uri)
+                                    .size(1000, 1000)  // Giới hạn kích thước ảnh (width, height)
+                                    .build()
 
-                        ),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .aspectRatio(1f)
-                            .clickable {
-                                selectedImage = imageUri
+                            ),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .aspectRatio(1f)
+                                .clickable {
+                                    selectedMedia = uri
+                                }
+                                .padding(1.dp)
+                        )
+                    }
+                    else {
+                        Box(
+                            modifier = Modifier
+                                .aspectRatio(1f)
+                                .clickable {
+                                    selectedMedia = uri
+                                }
+                                .padding(1.dp)
+                        ) {
+                            // Thumbnail video với cấu hình tốt hơn
+                            Image(
+                                painter = rememberAsyncImagePainter(
+                                    model = ImageRequest.Builder(context)
+                                        .data(uri)
+                                        .size(300, 300) // Giảm size để load nhanh hơn
+                                        .crossfade(true)
+                                        .videoFrameMillis(1000) // Lấy frame ở giây thứ 1
+                                        .build()
+                                ),
+                                contentDescription = "Video thumbnail",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+
+                            // Icon Play với background để dễ nhìn
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .size(48.dp)
+                                    .background(
+                                        Color.Black.copy(alpha = 0.5f),
+                                        CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PlayArrow,
+                                    contentDescription = "Play video",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
                             }
-                            .padding(1.dp)
-                    )
+                        }
+                    }
+
                 }
+
             }
         }
     }
 }
 }
+@Composable
+fun VideoPlayer(uri: Uri) {
+    val context = LocalContext.current
 
+    val player = remember {
+        ExoPlayer.Builder(context).build().apply {
+            setMediaItem(MediaItem.fromUri(uri))
+            prepare()
+            playWhenReady = false
+        }
+    }
+    LaunchedEffect(uri) {
+        player.setMediaItem(MediaItem.fromUri(uri))
+        player.prepare()
+        player.playWhenReady = false
+    }
+    DisposableEffect (key1 = player) {
+        onDispose {
+            player.release()
+        }
+    }
+
+
+    AndroidView(
+        factory = {
+            PlayerView(context).apply {
+                this.player = player
+            }
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+    )
+}
+
+fun loadGalleryVideos(context: Context): List<Uri> {
+    val videoList = mutableListOf<Uri>()
+    val projection = arrayOf(MediaStore.Video.Media._ID)
+    val sortOrder = "${MediaStore.Video.Media.DATE_ADDED} DESC"
+
+    context.contentResolver.query(
+        MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+        projection,
+        null,
+        null,
+        sortOrder
+    )?.use { cursor ->
+        val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
+        while (cursor.moveToNext()) {
+            val id = cursor.getLong(idColumn)
+            val contentUri = ContentUris.withAppendedId(
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id
+            )
+            videoList.add(contentUri)
+        }
+    }
+
+    return videoList
+}
 
 fun loadGalleryImages(context: Context): List<Uri> {
     val imageList = mutableListOf<Uri>()
@@ -235,4 +376,9 @@ fun loadGalleryImages(context: Context): List<Uri> {
     }
 
     return imageList
+
+}
+fun isVideoUri(context: Context, uri: Uri): Boolean {
+    val type = context.contentResolver.getType(uri)
+    return type?.startsWith("video") == true
 }

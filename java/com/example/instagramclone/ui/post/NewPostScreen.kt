@@ -52,8 +52,8 @@ fun NewPostScreen(uri: String,onPostSelected: (uri:String,caption:String,hashTag
 
     var isAiTagEnabled by remember { mutableStateOf(false) }
     var selectedVisibility by remember { mutableStateOf(Visibility.PUBLIC) }
-
-
+    var isLoading by remember { mutableStateOf(false) }
+    Box(modifier = Modifier.fillMaxWidth()) {
     Column(modifier = Modifier
         .fillMaxWidth()
         .padding(20.dp)
@@ -63,9 +63,9 @@ fun NewPostScreen(uri: String,onPostSelected: (uri:String,caption:String,hashTag
         Row(
             Modifier
                 .fillMaxWidth()
-                .padding(end = 8.dp),
-                    horizontalArrangement = Arrangement.Center
-        ) {
+                    .padding(end = 8.dp),
+                        horizontalArrangement = Arrangement.Center
+            ) {
 
             Image(
                 painter = rememberAsyncImagePainter(uri),
@@ -119,7 +119,10 @@ fun NewPostScreen(uri: String,onPostSelected: (uri:String,caption:String,hashTag
         Spacer(modifier = Modifier.weight(1f))
 
         Button(
-            onClick = {onPostSelected(uri,caption,hashTag,selectedVisibility)},
+            onClick = {
+                isLoading = true
+                onPostSelected(uri,caption,hashTag,selectedVisibility)
+                      },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 30.dp)
@@ -129,6 +132,16 @@ fun NewPostScreen(uri: String,onPostSelected: (uri:String,caption:String,hashTag
             Text("Chia sẻ")
         }
     }
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .padding(8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                androidx.compose.material3.CircularProgressIndicator()
+            }
+        }}
 }
 
 @Composable
