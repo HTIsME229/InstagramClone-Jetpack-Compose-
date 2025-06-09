@@ -1,27 +1,60 @@
 package com.example.instagramclone.ui.chat
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import coil.compose.rememberAsyncImagePainter
 import com.example.instagramclone.data.model.Message
+import com.example.instagramclone.util.isValidUri
 
 @Composable
-fun MessageBubble(message: Message, isOwn: Boolean) {
-    Row (
+fun MessageBubble(message: Message, isOwn: Boolean, avtUrl: String) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        horizontalArrangement = if (isOwn) Arrangement.End else Arrangement.Start
+
+
+        horizontalArrangement = if (isOwn) Arrangement.End else Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        if (!isOwn)
+            Image(
+                painter = rememberAsyncImagePainter(avtUrl),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .padding(end = 8.dp)
+            )
+        if (isValidUri(message.text)) {
+            Image(
+                painter = rememberAsyncImagePainter(model = message.text),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(200.dp)
+                    .clip(RoundedCornerShape(12.dp))
+            )
+        }
+        else
         Box(
             modifier = Modifier
                 .background(
@@ -30,10 +63,11 @@ fun MessageBubble(message: Message, isOwn: Boolean) {
                 )
                 .padding(12.dp)
         ) {
-            Text(
-                text = message.text,
-                color = if (isOwn) Color.White else Color.Black
-            )
+
+                Text(
+                    text = message.text,
+                    color = if (isOwn) Color.White else Color.Black
+                )
         }
     }
 }

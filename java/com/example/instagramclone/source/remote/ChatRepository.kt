@@ -3,6 +3,7 @@ package com.example.instagramclone.source.remote
 import android.media.midi.MidiSender
 import android.util.Log
 import com.example.instagramclone.data.model.Conversation
+import com.example.instagramclone.data.model.LastMessage
 import com.example.instagramclone.data.model.Message
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
@@ -103,13 +104,15 @@ class ChatRepository {
                     combinedTask.addOnSuccessListener { results ->
                         val latestMsgSnapshot = results[0] as QuerySnapshot
                         val userSnapshot = results[1] as DocumentSnapshot
+                            var latestMessage = LastMessage(
+                                text = latestMsgSnapshot.documents.firstOrNull()?.getString("text") ?: "",
+                                isOwn = latestMsgSnapshot.documents.firstOrNull()?.getString("senderId") == currentUserId
+                            )
 
-                        val latestMessage =
-                            latestMsgSnapshot.documents.firstOrNull()?.getString("text") ?: ""
                         val timestamp =
                             latestMsgSnapshot.documents.firstOrNull()?.getLong("timestamp") ?: 0L
 
-                        val name = userSnapshot.getString("name") ?: "Unknown"
+                        val name = userSnapshot.getString("userName") ?: "Unknown"
                         val avatarUrl = userSnapshot.getString("imageUrl") ?: ""
                         val isOnline = userSnapshot.getBoolean("isOnline") ?: false
 

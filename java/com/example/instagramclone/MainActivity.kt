@@ -81,6 +81,7 @@ import com.example.instagramclone.ui.viewModel.AuthenticationViewModel
 import com.example.instagramclone.ui.viewModel.ChatViewModel
 import com.example.instagramclone.ui.viewModel.PostViewModel
 import com.example.instagramclone.ui.viewModel.ProfileViewModel
+import com.example.instagramclone.util.isValidUri
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.auth.User
 import dagger.hilt.android.AndroidEntryPoint
@@ -187,7 +188,8 @@ fun InstagramApp() {
                 NewPostScreen(
                     uri = uri.toString(),
                     onPostSelected = { postUri, caption, hashTag, visibility ->
-                        vm.uploadFile( context,
+                        vm.uploadFile(
+                            context,
                             postUri.toUri(),
                             onSuccess = { it ->
                                 postViewModel.uploadPost(
@@ -234,7 +236,7 @@ fun InstagramApp() {
 
 
             if (currentUser != null) {
-                ChatInboxScreen(currentUser.userName, listConversation) {
+                ChatInboxScreen(currentUser.userName,currentUser.userId, listConversation) {
                     chatViewModel.setCurrentConversation(it)
                     val userId = URLEncoder.encode(it.userId, StandardCharsets.UTF_8.toString())
                     navController.navigate("message/$userId")
@@ -258,13 +260,38 @@ fun InstagramApp() {
 
             if (currentUser != null) {
                 ChatScreen(currentConversation, listMessage, currentUser) { mess ->
-                    chatViewModel.sendMessage(Message(currentUser.userId, userId.toString(), mess))
+                    if (isValidUri(mess))
+                        vm.uploadFile(context,
+                            mess.toUri(),
+                            onSuccess = {
+                            chatViewModel.sendMessage(
+                                Message(
+                                    currentUser.userId,
+                                    userId.toString(),
+                                    it,
+                                    type = "image"
+                                )
+                            )
+                        }, onError = {
+
+
+                        } )
+
+                    else
+                        chatViewModel.sendMessage(
+                            Message(
+                                currentUser.userId,
+                                userId.toString(),
+                                mess
+                            )
+                        )
                 }
             }
         }
 
     }
 }
+
 
 fun showToast(context: Context, message: String) {
     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -380,21 +407,22 @@ fun InstagramMainScreen(
             }
 
             when (selectedTabIndex) {
-                0 -> Home(posts, { postId,onSuccess,onFailure ->
-                    postViewModel.toggleLikePost(
-                        userId = userId.toString(),
-                        postId = postId,
-                        onSuccess = {
+                0 -> Home(
+                    posts, { postId, onSuccess, onFailure ->
+                        postViewModel.toggleLikePost(
+                            userId = userId.toString(),
+                            postId = postId,
+                            onSuccess = {
 
-                        },
-                        onError = {
-                            onFailure(it?:"Server error")
-                        }
+                            },
+                            onError = {
+                                onFailure(it ?: "Server error")
+                            }
 
-                    )
+                        )
 
-                }, postViewModel,vm
-                 )
+                    }, postViewModel, vm
+                )
 
                 1 -> SearchScreen(onSearchClick = { query ->
                     postViewModel.searchUserAndPost(query = query)
@@ -402,7 +430,7 @@ fun InstagramMainScreen(
                 }, postViewModel)
 
                 4 -> ProfileScreen(vm, profileViewModel, navController)
-                else -> Home(posts, { postId,onSuccess,onFailure ->
+                else -> Home(posts, { postId, onSuccess, onFailure ->
                     postViewModel.toggleLikePost(
                         userId = userId.toString(),
                         postId = postId,
@@ -411,10 +439,10 @@ fun InstagramMainScreen(
                         },
                         onError = {
                             Log.d("TAGonFailure", "onFailure: $it")
-                            onFailure(it?:"Server error")
+                            onFailure(it ?: "Server error")
                         }
                     )
-                }, postViewModel,vm)
+                }, postViewModel, vm)
             }
 
         }

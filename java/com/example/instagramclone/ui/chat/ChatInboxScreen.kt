@@ -35,17 +35,15 @@ import coil.compose.rememberAsyncImagePainter
 // Coil (load avatar/image từ URL)
 import coil.compose.rememberImagePainter
 import com.example.instagramclone.R
+import com.example.instagramclone.util.isValidUri
 
 @Composable
-fun ChatInboxScreen(userName: String, conversations: List<Conversation>,onItemChatClick:(Conversation)->Unit) {
+fun ChatInboxScreen(userName: String,userId:String, conversations: List<Conversation>,onItemChatClick:(Conversation)->Unit) {
     Column (modifier = Modifier.fillMaxSize().background(Color.White)) {
         TopBar(userName)
         SearchBar()
         StoryRow()
-        ConversationList(conversations){
-            onItemChatClick(it)
-
-        }
+        ConversationList(conversations, {onItemChatClick(it)},userId )
     }
 }
 @Composable
@@ -84,7 +82,7 @@ fun StoryRow() {
     }
 }
 @Composable
-fun ConversationList(conversations: List<Conversation>,onItemChatClick:(Conversation)->Unit) {
+fun ConversationList(conversations: List<Conversation>,onItemChatClick:(Conversation)->Unit,userId: String) {
     LazyColumn {
         items(conversations) { conv ->
             Row(
@@ -102,8 +100,12 @@ fun ConversationList(conversations: List<Conversation>,onItemChatClick:(Conversa
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
+
                     Text(conv.name, fontWeight = FontWeight.Bold)
-                    Text(conv.lastMessage, color = Color.Gray, fontSize = 13.sp)
+                    if(isValidUri(conv.lastMessage.text))
+                        Text( " ${if(conv.lastMessage.isOwn) "You" else conv.name} Sent Image", color = Color.Gray, fontSize = 13.sp)
+                    else
+                        Text((if(conv.lastMessage.isOwn) "You:" else "") + conv.lastMessage.text, color = Color.Gray, fontSize = 13.sp)
                 }
                 Spacer(Modifier.weight(1f))
                 if (conv.showCameraIcon) {
