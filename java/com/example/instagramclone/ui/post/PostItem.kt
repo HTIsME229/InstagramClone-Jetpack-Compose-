@@ -53,6 +53,7 @@ import com.example.instagramclone.data.model.Post
 @Composable
 fun PostItem(
     post: Post,
+    isPlaying: Boolean,
     listPostLiked: List<String>, likePost: (
         postId: String,
         onSuccess: () -> Unit,
@@ -119,7 +120,7 @@ fun PostItem(
 
         // Post Image (pager nếu nhiều ảnh)
         if (post.mediaUrl.contains("https://res.cloudinary.com/dwbsddywc/video/upload")) {
-            VideoPlayer(uri = post.mediaUrl.toUri())
+            VideoPlayer(videoUri = post.mediaUrl.toUri(),isPlaying)
 
         } else {
             Image(
@@ -127,7 +128,7 @@ fun PostItem(
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp),
+                    .height(350.dp),
                 contentScale = ContentScale.Crop
             )
         }

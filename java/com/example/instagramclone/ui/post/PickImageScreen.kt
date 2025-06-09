@@ -9,6 +9,7 @@ import android.os.Build
 import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.OptIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -30,6 +32,8 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -49,11 +53,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.request.videoFrameMillis
+import com.example.instagramclone.R
+import kotlinx.coroutines.delay
 
 @Composable
 fun InstagramStylePicker(
@@ -196,7 +205,7 @@ Box(   modifier = Modifier
             // Ảnh được chọn
             selectedMedia?.let {
                 if (isVideoUri(context, selectedMedia!!)) {
-                    VideoPlayer(uri = selectedMedia!!)
+                    VideoPlayer(videoUri = selectedMedia!!,false)
                 } else {
                     Image(
                         painter = rememberAsyncImagePainter(
@@ -293,39 +302,109 @@ Box(   modifier = Modifier
     }
 }
 }
-@Composable
-fun VideoPlayer(uri: Uri) {
-    val context = LocalContext.current
 
-    val player = remember {
+@OptIn(UnstableApi::class)
+@Composable
+fun VideoPlayer(
+    videoUri: Uri,
+    isPlay: Boolean ,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val exoPlayer = remember {
         ExoPlayer.Builder(context).build().apply {
-            setMediaItem(MediaItem.fromUri(uri))
+            setMediaItem(MediaItem.fromUri(videoUri))
+            repeatMode = Player.REPEAT_MODE_ONE  // Loop video
             prepare()
             playWhenReady = false
         }
     }
-    LaunchedEffect(uri) {
-        player.setMediaItem(MediaItem.fromUri(uri))
-        player.prepare()
-        player.playWhenReady = false
+
+    var isPlaying by remember { mutableStateOf(false ) }
+    var showControls by remember { mutableStateOf(false) }
+    var currentPosition by remember { mutableStateOf(0L) }
+    val duration = exoPlayer.duration.takeIf { it > 0 } ?: 0L
+    LaunchedEffect(isPlay) {
+        isPlaying =isPlay
+        if (isPlaying) {
+            exoPlayer.play()
+        } else {
+            exoPlayer.pause()
+        }
     }
-    DisposableEffect (key1 = player) {
-        onDispose {
-            player.release()
+    // Cập nhật progress
+    LaunchedEffect(Unit) {
+        while (true) {
+            currentPosition = exoPlayer.currentPosition
+            delay(300)
         }
     }
 
+    DisposableEffect(Unit) {
+        onDispose { exoPlayer.release() }
+    }
+    DisposableEffect(videoUri) {
+        onDispose { exoPlayer.release() }
+    }
 
-    AndroidView(
-        factory = {
-            PlayerView(context).apply {
-                this.player = player
+    Box(modifier = modifier
+        .clickable {
+            // Tap video để hiện/ẩn controls
+            if (exoPlayer.isPlaying) {
+                exoPlayer.pause()
+                isPlaying = false
+            } else {
+                exoPlayer.play()
+                isPlaying = true
             }
+            showControls = !showControls
+
+
         },
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-    )
+            contentAlignment = Alignment.Center
+    ) {
+        AndroidView(
+            factory = { ctx ->
+                PlayerView(ctx).apply {
+                    player = exoPlayer
+                    useController = false
+
+                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                }
+            },
+            modifier = Modifier.fillMaxSize().height(400.dp)
+        )
+
+        // Overlay control (nút Play/Pause nhỏ gọn)
+        if (showControls) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Transparent)
+                  ,
+                contentAlignment = Alignment.Center
+            ) {
+                if (!isPlaying)
+                Image(
+                     painter =  rememberAsyncImagePainter(model =  R.drawable.play_buttton ) ,
+                        contentDescription = "Play/Pause",
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+
+        }
+
+        // Thanh progress dưới đáy video
+        LinearProgressIndicator(
+            progress = { if (duration > 0) currentPosition / duration.toFloat() else 0f },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(2.dp),
+            color = Color.White,
+            trackColor = Color.White.copy(alpha = 0.3f),
+        )
+    }
 }
 
 fun loadGalleryVideos(context: Context): List<Uri> {
