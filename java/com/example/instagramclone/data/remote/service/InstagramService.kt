@@ -1,12 +1,12 @@
 package com.example.instagramclone.data.remote
 
-import com.example.instagramclone.domain.DTO.DataSearchResponse
+import com.example.instagramclone.data.mapper.DTO.DataSearchResponse
 import com.example.instagramclone.domain.model.Comment
 import com.example.instagramclone.domain.model.Post
 import com.example.instagramclone.domain.model.User
-import com.example.instagramclone.domain.res.ResResult
-import com.example.instagramclone.domain.DTO.ResponseCommentResult
-import com.example.instagramclone.domain.res.ResponseResult
+import com.example.instagramclone.data.mapper.res.ResResult
+import com.example.instagramclone.data.mapper.DTO.ResponseCommentResult
+import com.example.instagramclone.data.mapper.res.ResponseResult
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
